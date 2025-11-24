@@ -619,7 +619,7 @@
             + Add profile
           </div>
           <div class="small-muted">
-            Profiles are stored in the cloud for this app only.
+            Profiles are stored for this app only.
           </div>
         </div>
       </section>
@@ -819,6 +819,10 @@
       let currentItem = null;
       let playbackProfile = null;
 
+      // Tracking what we last flushed to backend, to avoid duplicate KV writes
+      let lastFlushedKey = null;
+      let lastFlushedTimestamp = null;
+
       // 1. DOM references
 
       const homeLogo = document.getElementById("homeLogo");
@@ -912,8 +916,30 @@
         playbackProfile = null;
       }
 
+      async function flushCurrentPlaybackToBackend() {
+        if (!currentItem || !currentProfile) return;
+        const rec = loadProgressForItem(currentItem);
+        if (!rec) return;
+
+        const key = `${currentProfile}:${rec.mediaType}:${rec.id}:${rec.season || 0}:${rec.episode || 0}`;
+        if (lastFlushedKey === key && lastFlushedTimestamp === rec.timestamp) {
+          return;
+        }
+
+        lastFlushedKey = key;
+        lastFlushedTimestamp = rec.timestamp;
+
+        try {
+          await saveProgressToBackend(currentProfile, rec);
+        } catch (e) {
+          console.error("flushCurrentPlaybackToBackend error", e);
+        }
+      }
+
       function showView(name) {
+        // Leaving the player view, flush once and stop audio
         if (currentView === "detail" && name !== "detail") {
+          flushCurrentPlaybackToBackend();
           stopPlayback();
         }
 
@@ -1180,7 +1206,7 @@
       async function saveProgressToBackend(userId, data) {
         if (!userId) return;
         try {
-          const response = await fetch(API_BASE + "/progress/save", {
+          await fetch(API_BASE + "/progress/save", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -1195,7 +1221,6 @@
               timestamp: data.timestamp || Date.now()
             })
           });
-          await response.json().catch(() => null);
         } catch (e) {
           console.error("saveProgressToBackend error", e);
         }
@@ -1505,6 +1530,8 @@
       function loadItem(item, resume) {
         currentItem = item;
         playbackProfile = currentProfile;
+        lastFlushedKey = null;
+        lastFlushedTimestamp = null;
         showView("detail");
 
         detailTitle.textContent = item.title;
@@ -1935,8 +1962,8 @@
         const data = payload.data || {};
         if (!data.id) return;
 
+        // Save only to localStorage on each event
         saveProgressLocal(data);
-        saveProgressToBackend(currentProfile, data);
 
         if (currentItem && String(data.id) === String(currentItem.tmdbId)) {
           if (data.event === "play") detailStatus.textContent = "Playing";
@@ -1955,6 +1982,11 @@
                 data.duration
               )}`;
           }
+        }
+
+        // If the video fully finished, flush that session now too
+        if (data.event === "ended") {
+          flushCurrentPlaybackToBackend();
         }
 
         renderHomeContinueAndRecent();
@@ -2034,6 +2066,12 @@
         renderProfiles();
       });
 
+      // On tab close or refresh, try to flush current playback once
+      window.addEventListener("beforeunload", () => {
+        // Fire and forget, browser may or may not wait
+        flushCurrentPlaybackToBackend();
+      });
+
       // 12. Init
 
       async function init() {
@@ -2050,7 +2088,11 @@
         }
         updateProfileHeader();
 
-        await Promise.all([fetchTrending(), fetchMovieGenres(), fetchTvGenres()]);
+        await Promise.all([
+          fetchTrending(),
+          fetchMovieGenres(),
+          fetchTvGenres()
+        ]);
 
         if (currentProfile) {
           await syncProgressFromBackendToLocal(currentProfile);
