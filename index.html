@@ -917,11 +917,14 @@
       }
 
       async function flushCurrentPlaybackToBackend() {
-        if (!currentItem || !currentProfile) return;
-        const rec = loadProgressForItem(currentItem);
-        if (!rec) return;
+        if (!currentItem) return;
 
-        const key = `${currentProfile}:${rec.mediaType}:${rec.id}:${rec.season || 0}:${rec.episode || 0}`;
+        const rec = loadProgressForItem(currentItem);
+        const profile = currentProfile || playbackProfile;
+
+        if (!rec || !profile) return;
+
+        const key = `${profile}:${rec.mediaType}:${rec.id}:${rec.season || 0}:${rec.episode || 0}`;
         if (lastFlushedKey === key && lastFlushedTimestamp === rec.timestamp) {
           return;
         }
@@ -930,7 +933,7 @@
         lastFlushedTimestamp = rec.timestamp;
 
         try {
-          await saveProgressToBackend(currentProfile, rec);
+          await saveProgressToBackend(profile, rec);
         } catch (e) {
           console.error("flushCurrentPlaybackToBackend error", e);
         }
@@ -1142,13 +1145,13 @@
         if (!profile) return;
 
         const type = data.mediaType || data.type || "movie";
-        const id = data.id || data.tmdbId;
+        const id = String(data.tmdbId || data.id);
         const season = data.season || 0;
         const episode = data.episode || 0;
 
         const key = `watchProgress:${profile}:${type}:${id}:${season}:${episode}`;
         const record = {
-          id: String(id),
+          id,
           mediaType: type,
           season,
           episode,
@@ -1159,7 +1162,11 @@
           profile
         };
 
-        localStorage.setItem(key, JSON.stringify(record));
+        try {
+          localStorage.setItem(key, JSON.stringify(record));
+        } catch (e) {
+          console.error("Error writing watch progress to localStorage", e);
+        }
       }
 
       function loadAllProgressLocal() {
@@ -1636,23 +1643,35 @@
       function renderHomeContinueAndRecent() {
         const progressEntries = loadAllProgressLocal();
         homeContinueScroll.innerHTML = "";
-        const continueKeys = new Set();
+
+        const perTitle = new Map();
+
         progressEntries.forEach((rec) => {
           if (!rec.id || !rec.mediaType) return;
-          const item = ITEM_INDEX[`${rec.mediaType}:${String(rec.id)}`];
+
+          if (typeof rec.progress === "number" && rec.progress >= 98) return;
+
+          const key = `${rec.mediaType}:${String(rec.id)}`;
+          const item = ITEM_INDEX[key];
           if (!item) return;
-          const key = `${rec.mediaType}:${rec.id}:${rec.season || 0}:${
-            rec.episode || 0
-          }`;
-          if (rec.progress < 98 && !continueKeys.has(key)) {
-            continueKeys.add(key);
-            const clone = { ...item };
+
+          if (perTitle.has(key)) return;
+
+          const clone = { ...item };
+
+          if (rec.mediaType === "tv") {
             clone.season = rec.season || item.season || 1;
             clone.episode = rec.episode || item.episode || 1;
-            const card = createCard(clone, rec);
-            homeContinueScroll.appendChild(card);
           }
+
+          perTitle.set(key, { item: clone, rec });
         });
+
+        perTitle.forEach(({ item, rec }) => {
+          const card = createCard(item, rec);
+          homeContinueScroll.appendChild(card);
+        });
+
         homeContinueRow.style.display =
           homeContinueScroll.children.length > 0 ? "block" : "none";
       }
@@ -1984,8 +2003,8 @@
           }
         }
 
-        // If the video fully finished, flush that session now too
-        if (data.event === "ended") {
+        // When the user stops (pause or finished), flush latest progress to backend
+        if (data.event === "pause" || data.event === "ended") {
           flushCurrentPlaybackToBackend();
         }
 
