@@ -619,7 +619,7 @@
             + Add profile
           </div>
           <div class="small-muted">
-            Profiles are stored for this app only.
+            Profiles are stored locally and synced to this app backend.
           </div>
         </div>
       </section>
@@ -823,6 +823,9 @@
       let lastFlushedKey = null;
       let lastFlushedTimestamp = null;
 
+      // Debounce for profiles save to backend
+      let profilesSaveTimer = null;
+
       // 1. DOM references
 
       const homeLogo = document.getElementById("homeLogo");
@@ -930,10 +933,6 @@
         lastFlushedTimestamp = rec.timestamp;
 
         try {
-          console.log("[MyFlix] Saving progress to backend", {
-            userId: currentProfile,
-            ...rec
-          });
           await saveProgressToBackend(currentProfile, rec);
         } catch (e) {
           console.error("flushCurrentPlaybackToBackend error", e);
@@ -995,7 +994,7 @@
         return `${m}:${String(s).padStart(2, "0")}`;
       }
 
-      // 3. Profiles
+      // 3. Profiles local storage
 
       function loadProfilesFromStorage() {
         try {
@@ -1009,42 +1008,7 @@
 
       function saveProfilesToStorage() {
         localStorage.setItem(PROFILES_KEY, JSON.stringify(profiles));
-      }
-
-      async function fetchProfilesFromBackend() {
-        try {
-          console.log("[MyFlix] Fetching profiles from backend");
-          const res = await fetch(`${API_BASE}/profiles/list`);
-          if (!res.ok) {
-            console.warn("profiles/list status", res.status);
-            return null;
-          }
-          const json = await res.json().catch(() => null);
-          if (!json || !json.ok || !Array.isArray(json.profiles)) {
-            return null;
-          }
-          return json.profiles;
-        } catch (err) {
-          console.error("fetchProfilesFromBackend error", err);
-          return null;
-        }
-      }
-
-      async function saveProfilesToBackend(profilesToSave) {
-        try {
-          console.log("[MyFlix] Saving profiles to backend", profilesToSave);
-          const res = await fetch(`${API_BASE}/profiles/save`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ profiles: profilesToSave })
-          });
-          const json = await res.json().catch(() => null);
-          if (!res.ok || !json || !json.ok) {
-            console.warn("profiles/save not ok", res.status, json);
-          }
-        } catch (err) {
-          console.error("saveProfilesToBackend error", err);
-        }
+        scheduleProfilesSaveToBackend();
       }
 
       function updateProfileHeader() {
@@ -1068,6 +1032,64 @@
           if (key.startsWith(prefix)) keysToRemove.push(key);
         }
         keysToRemove.forEach((k) => localStorage.removeItem(k));
+      }
+
+      // 3b. Profiles backend
+
+      async function loadProfilesFromBackend() {
+        try {
+          console.log(
+            "[MyFlix] Fetching profiles from backend",
+            API_BASE + "/profiles/list"
+          );
+          const res = await fetch(API_BASE + "/profiles/list");
+          const text = await res.text().catch(() => "");
+          console.log(
+            "[MyFlix] Backend /profiles/list raw response",
+            res.status,
+            text
+          );
+          if (!res.ok) throw new Error("Bad status " + res.status);
+          const json = JSON.parse(text || "{}");
+          if (!json.ok || !Array.isArray(json.profiles)) return [];
+          return json.profiles
+            .map((p) => ({
+              name: (p && p.name ? String(p.name) : "").trim()
+            }))
+            .filter((p) => p.name);
+        } catch (e) {
+          console.error("Failed to load profiles from backend", e);
+          return [];
+        }
+      }
+
+      function scheduleProfilesSaveToBackend() {
+        if (!profiles || !profiles.length) return;
+        if (profilesSaveTimer) clearTimeout(profilesSaveTimer);
+        profilesSaveTimer = setTimeout(async () => {
+          try {
+            const payload = {
+              profiles: profiles.map((p) => ({ name: p.name }))
+            };
+            console.log(
+              "[MyFlix] Saving profiles to backend",
+              JSON.stringify(payload)
+            );
+            const res = await fetch(API_BASE + "/profiles/save", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload)
+            });
+            const text = await res.text().catch(() => "");
+            console.log(
+              "[MyFlix] Backend /profiles/save response",
+              res.status,
+              text
+            );
+          } catch (e) {
+            console.error("Failed to save profiles to backend", e);
+          }
+        }, 1200);
       }
 
       function renderProfiles() {
@@ -1103,7 +1125,6 @@
             const oldName = p.name;
             p.name = trimmed;
             saveProfilesToStorage();
-            saveProfilesToBackend(profiles);
 
             const oldPrefix = `watchProgress:${oldName}:`;
             const newPrefix = `watchProgress:${trimmed}:`;
@@ -1145,10 +1166,9 @@
             clearProfileProgress(p.name);
             profiles = profiles.filter((x) => x !== p);
             if (profiles.length === 0) {
-              profiles = [{ name: "Henok" }, { name: "Guest" }];
+              profiles = [{ name: "You" }, { name: "Guest" }];
             }
             saveProfilesToStorage();
-            saveProfilesToBackend(profiles);
             if (currentProfile === p.name) {
               currentProfile = null;
               localStorage.removeItem(CURRENT_PROFILE_KEY);
@@ -1175,37 +1195,6 @@
         await syncProgressFromBackendToLocal(name);
         renderHomeRows();
         showView("home");
-      }
-
-      async function initProfiles() {
-        // Try backend first
-        const backendProfiles = await fetchProfilesFromBackend();
-
-        if (backendProfiles && backendProfiles.length) {
-          profiles = backendProfiles;
-          saveProfilesToStorage();
-        } else {
-          // Fallback local or default
-          profiles = loadProfilesFromStorage();
-          if (!profiles.length) {
-            profiles = [{ name: "Henok" }, { name: "Guest" }];
-          }
-          saveProfilesToStorage();
-          saveProfilesToBackend(profiles);
-        }
-
-        const stored = localStorage.getItem(CURRENT_PROFILE_KEY);
-        if (stored && profiles.find((p) => p.name === stored)) {
-          currentProfile = stored;
-        } else {
-          currentProfile = profiles[0]?.name || null;
-          if (currentProfile) {
-            localStorage.setItem(CURRENT_PROFILE_KEY, currentProfile);
-          }
-        }
-
-        updateProfileHeader();
-        renderProfiles();
       }
 
       // 4. Progress local storage and backend
@@ -1235,9 +1224,9 @@
         localStorage.setItem(key, JSON.stringify(record));
       }
 
-      function loadAllProgressLocalForProfile(profileName) {
-        if (!profileName) return [];
-        const prefix = `watchProgress:${profileName}:`;
+      function loadAllProgressLocal() {
+        if (!currentProfile) return [];
+        const prefix = `watchProgress:${currentProfile}:`;
         const entries = [];
         for (let i = 0; i < localStorage.length; i++) {
           const key = localStorage.key(i);
@@ -1250,10 +1239,6 @@
         }
         entries.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
         return entries;
-      }
-
-      function loadAllProgressLocal() {
-        return loadAllProgressLocalForProfile(currentProfile);
       }
 
       function loadProgressForItem(item) {
@@ -1283,7 +1268,18 @@
       async function saveProgressToBackend(userId, data) {
         if (!userId) return;
         try {
-          await fetch(API_BASE + "/progress/save", {
+          console.log("[MyFlix] Saving progress to backend", {
+            userId,
+            id: data.id,
+            mediaType: data.mediaType || data.type,
+            season: data.season || 0,
+            episode: data.episode || 0,
+            currentTime: data.currentTime || 0,
+            duration: data.duration || 0,
+            progress: data.progress || 0,
+            timestamp: data.timestamp || Date.now()
+          });
+          const res = await fetch(API_BASE + "/progress/save", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -1298,68 +1294,43 @@
               timestamp: data.timestamp || Date.now()
             })
           });
+          const text = await res.text().catch(() => "");
+          console.log(
+            "[MyFlix] Backend /progress/save response",
+            res.status,
+            text
+          );
         } catch (e) {
           console.error("saveProgressToBackend error", e);
         }
       }
 
-      function buildProgressKey(entry) {
-        return `${entry.mediaType || entry.type}:${String(entry.id)}:${entry.season || 0}:${entry.episode || 0}`;
-      }
-
       async function syncProgressFromBackendToLocal(profileName) {
         if (!profileName) return [];
-        console.log(
-          "[MyFlix] Fetching progress list from backend",
-          `${API_BASE}/progress/list?userId=${encodeURIComponent(profileName)}`
-        );
-
-        const localEntries = loadAllProgressLocalForProfile(profileName);
-        const merged = new Map();
-
-        // Start with local entries
-        localEntries.forEach((rec) => {
-          const key = buildProgressKey(rec);
-          merged.set(key, { ...rec, profile: profileName });
-        });
-
         try {
-          const res = await fetch(
-            `${API_BASE}/progress/list?userId=${encodeURIComponent(
-              profileName
-            )}`
+          const url = `${API_BASE}/progress/list?userId=${encodeURIComponent(
+            profileName
+          )}`;
+          console.log("[MyFlix] Fetching progress list from backend", url);
+          const res = await fetch(url);
+          const text = await res.text().catch(() => "");
+          console.log(
+            "[MyFlix] Backend /progress/list raw response",
+            res.status,
+            text
           );
-          const rawText = await res.text();
-          console.log("[MyFlix] Backend /progress/list raw response", res.status, rawText);
           if (!res.ok) throw new Error("Bad status " + res.status);
-          const json = JSON.parse(rawText);
+          const json = JSON.parse(text || "{}");
           console.log("[MyFlix] Parsed /progress/list JSON", json);
-          if (!json.ok) return Array.from(merged.values());
-
+          if (!json.ok) return [];
           const list = Array.isArray(json.entries) ? json.entries : [];
           list.forEach((entry) => {
-            const backendRec = { ...entry, profile: profileName };
-            const key = buildProgressKey(backendRec);
-            const existing = merged.get(key);
-            if (
-              !existing ||
-              (backendRec.timestamp || 0) > (existing.timestamp || 0)
-            ) {
-              merged.set(key, backendRec);
-            }
+            saveProgressLocal({ ...entry, profile: profileName });
           });
-
-          // Replace local data for this profile with merged result
-          clearProfileProgress(profileName);
-          const finalList = Array.from(merged.values());
-          finalList.forEach((rec) => saveProgressLocal(rec));
-          return finalList;
+          return list;
         } catch (err) {
-          console.error(
-            "Failed to load progress from backend, keeping local only",
-            err
-          );
-          return Array.from(merged.values());
+          console.error("Failed to load progress from backend", err);
+          return [];
         }
       }
 
@@ -1748,26 +1719,116 @@
         return card;
       }
 
-      function renderHomeContinueAndRecent() {
+      async function getItemForProgress(rec) {
+        if (!rec.id || !rec.mediaType) return null;
+
+        const key = `${rec.mediaType}:${String(rec.id)}`;
+        let item = ITEM_INDEX[key];
+        if (item) return item;
+
+        // Not in memory yet. Fetch full details from TMDB so we can build a card.
+        try {
+          const path =
+            rec.mediaType === "movie" ? `/movie/${rec.id}` : `/tv/${rec.id}`;
+          const data = await tmdbFetch(path);
+
+          if (!data || !data.id) {
+            return null;
+          }
+
+          if (rec.mediaType === "movie") {
+            item = {
+              id: String(data.id),
+              tmdbId: String(data.id),
+              type: "movie",
+              title: data.title || data.original_title || "Untitled",
+              year: data.release_date
+                ? Number(data.release_date.slice(0, 4))
+                : "",
+              description: data.overview || "",
+              poster: data.poster_path
+                ? TMDB_POSTER_BASE + data.poster_path
+                : null,
+              backdrop: data.backdrop_path
+                ? TMDB_IMAGE_BASE + data.backdrop_path
+                : null,
+              genres: (data.genres || []).map((g) => g.id)
+            };
+          } else {
+            item = {
+              id: String(data.id),
+              tmdbId: String(data.id),
+              type: "tv",
+              title: data.name || data.original_name || "Untitled",
+              year: data.first_air_date
+                ? Number(data.first_air_date.slice(0, 4))
+                : "",
+              description: data.overview || "",
+              season: rec.season || 1,
+              episode: rec.episode || 1,
+              poster: data.poster_path
+                ? TMDB_POSTER_BASE + data.poster_path
+                : null,
+              backdrop: data.backdrop_path
+                ? TMDB_IMAGE_BASE + data.backdrop_path
+                : null,
+              genres: (data.genres || []).map((g) => g.id)
+            };
+          }
+
+          rememberItems([item]);
+          return item;
+        } catch (e) {
+          console.error("getItemForProgress tmdb error", e);
+          return null;
+        }
+      }
+
+      async function renderHomeContinueAndRecent() {
         const progressEntries = loadAllProgressLocal();
         homeContinueScroll.innerHTML = "";
-        const continueKeys = new Set();
-        progressEntries.forEach((rec) => {
-          if (!rec.id || !rec.mediaType) return;
-          const item = ITEM_INDEX[`${rec.mediaType}:${String(rec.id)}`];
-          if (!item) return;
-          const key = `${rec.mediaType}:${rec.id}:${rec.season || 0}:${
-            rec.episode || 0
-          }`;
-          if (rec.progress < 98 && !continueKeys.has(key)) {
-            continueKeys.add(key);
-            const clone = { ...item };
+
+        // Map from "mediaType:id" to the latest incomplete record
+        const latestByShow = {};
+
+        for (const rec of progressEntries) {
+          if (!rec.id || !rec.mediaType) continue;
+
+          const progressValue =
+            typeof rec.progress === "number" ? rec.progress : 0;
+
+          // Ignore entries that are basically unwatched or fully watched
+          if (progressValue <= 0 || progressValue >= 98) {
+            continue;
+          }
+
+          const showKey = `${rec.mediaType}:${String(rec.id)}`;
+
+          // progressEntries are already sorted newest first,
+          // so the first time we see a showKey is the latest episode.
+          if (!latestByShow[showKey]) {
+            latestByShow[showKey] = rec;
+          }
+        }
+
+        const recsToShow = Object.values(latestByShow);
+
+        for (const rec of recsToShow) {
+          const item = await getItemForProgress(rec);
+          if (!item) continue;
+
+          const clone = { ...item };
+
+          // Make sure TV cards show the correct season and episode
+          if (clone.type === "tv") {
             clone.season = rec.season || item.season || 1;
             clone.episode = rec.episode || item.episode || 1;
-            const card = createCard(clone, rec);
-            homeContinueScroll.appendChild(card);
           }
-        });
+
+          const card = createCard(clone, rec);
+          homeContinueScroll.appendChild(card);
+        }
+
         homeContinueRow.style.display =
           homeContinueScroll.children.length > 0 ? "block" : "none";
       }
@@ -1879,6 +1940,7 @@
         });
 
         renderHomeContinueAndRecent();
+          // async, side effect only
         renderHomeRecommendations();
         renderHomeHero();
       }
@@ -2178,7 +2240,6 @@
         }
         profiles.push({ name: trimmed });
         saveProfilesToStorage();
-        saveProfilesToBackend(profiles);
         renderProfiles();
       });
 
@@ -2191,7 +2252,45 @@
       // 12. Init
 
       async function init() {
-        await initProfiles();
+        const localProfiles = loadProfilesFromStorage();
+        const storedProfileName =
+          localStorage.getItem(CURRENT_PROFILE_KEY) || null;
+
+        const backendProfiles = await loadProfilesFromBackend();
+
+        let merged = [];
+        const seen = new Set();
+
+        function addList(list) {
+          (list || []).forEach((p) => {
+            const name = (p && p.name ? String(p.name) : "").trim();
+            if (!name || seen.has(name)) return;
+            seen.add(name);
+            merged.push({ name });
+          });
+        }
+
+        if (backendProfiles.length) {
+          addList(backendProfiles);
+          addList(localProfiles);
+        } else if (localProfiles.length) {
+          addList(localProfiles);
+        } else {
+          merged = [{ name: "You" }, { name: "Guest" }];
+        }
+
+        profiles = merged;
+        saveProfilesToStorage();
+        renderProfiles();
+
+        if (storedProfileName && profiles.find((p) => p.name === storedProfileName)) {
+          currentProfile = storedProfileName;
+        } else if (profiles.length) {
+          currentProfile = profiles[0].name;
+          localStorage.setItem(CURRENT_PROFILE_KEY, currentProfile);
+        }
+
+        updateProfileHeader();
 
         await Promise.all([
           fetchTrending(),
