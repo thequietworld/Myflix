@@ -1601,17 +1601,20 @@
 
       function buildPlayerUrl(item, resumeFromSeconds) {
         const base = "https://www.vidking.net/embed";
-        const progressSec = Math.floor(resumeFromSeconds || 0);
+      
         if (item.type === "movie") {
-          return `${base}/movie/${item.tmdbId}?color=${PLAYER_COLOR}&autoPlay=true&progress=${progressSec}`;
+          return `${base}/movie/${item.tmdbId}?color=${PLAYER_COLOR}&autoPlay=true`;
         }
+      
         if (item.type === "tv") {
           const season = item.season || 1;
           const episode = item.episode || 1;
-          return `${base}/tv/${item.tmdbId}/${season}/${episode}?color=${PLAYER_COLOR}&autoPlay=true&nextEpisode=true&episodeSelector=true&progress=${progressSec}`;
+          return `${base}/tv/${item.tmdbId}/${season}/${episode}?color=${PLAYER_COLOR}&autoPlay=true&nextEpisode=true&episodeSelector=true`;
         }
+      
         return "";
       }
+
 
       function loadItem(item, resume) {
         currentItem = item;
