@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>MyFlix - Personal Streaming Dashboard</title>
+    <title>MyFlix - Smart Recommendations</title>
     <style>
       * {
         box-sizing: border-box;
@@ -29,6 +29,8 @@
         position: sticky;
         top: 0;
         z-index: 20;
+        flex-wrap: wrap;
+        gap: 10px;
       }
 
       .logo {
@@ -68,6 +70,7 @@
         font-size: 14px;
         background: rgba(255, 255, 255, 0.1);
         color: white;
+        min-width: 200px;
       }
 
       .search-bar::placeholder {
@@ -114,8 +117,97 @@
         display: block;
       }
 
-      /* Home hero */
+      /* Filter Panel */
+      .filter-panel {
+        background: rgba(30, 30, 30, 0.95);
+        border-radius: 8px;
+        padding: 16px 20px;
+        margin-bottom: 20px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        align-items: flex-end;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
 
+      .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .filter-label {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: rgba(255, 255, 255, 0.7);
+      }
+
+      .filter-select, .filter-input {
+        background: rgba(0, 0, 0, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 14px;
+        cursor: pointer;
+      }
+
+      .filter-select:hover, .filter-input:hover {
+        border-color: #e50914;
+      }
+
+      .year-range {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .year-input {
+        width: 80px;
+        background: rgba(0, 0, 0, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+        padding: 8px;
+        border-radius: 6px;
+        text-align: center;
+      }
+
+      .filter-actions {
+        display: flex;
+        gap: 8px;
+        margin-left: auto;
+      }
+
+      .filter-btn {
+        padding: 8px 16px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+      }
+
+      .filter-btn-primary {
+        background: #e50914;
+        color: white;
+      }
+
+      .filter-btn-secondary {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+      }
+
+      .filter-btn-primary:hover {
+        background: #f40612;
+      }
+
+      .filter-btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+
+      /* Home hero */
       .home-hero {
         position: relative;
         margin: 0 -32px 24px;
@@ -225,7 +317,6 @@
       }
 
       /* Rows and cards */
-
       .rows-section {
         margin-top: 16px;
         background: #000;
@@ -235,10 +326,30 @@
         margin-bottom: 26px;
       }
 
+      .row-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+
       .row-title {
         font-size: 18px;
         font-weight: 600;
-        margin-bottom: 8px;
+      }
+
+      .row-selector {
+        background: rgba(0, 0, 0, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        cursor: pointer;
+      }
+
+      .row-selector:hover {
+        border-color: #e50914;
       }
 
       .row-scroll {
@@ -324,7 +435,6 @@
       }
 
       /* Movies and shows browse */
-
       #moviesView,
       #tvView {
         padding-top: 10px;
@@ -380,14 +490,12 @@
       }
 
       /* Search view */
-
       #searchView {
         padding-top: 10px;
         background: #000;
       }
 
       /* Detail view */
-
       #detailView {
         padding-top: 10px;
         background: #000;
@@ -474,7 +582,6 @@
       }
 
       /* Profiles view */
-
       #profilesView {
         position: fixed;
         inset: 0;
@@ -586,6 +693,15 @@
         .player {
           height: 260px;
         }
+
+        .filter-panel {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .filter-actions {
+          margin-left: 0;
+        }
       }
     </style>
   </head>
@@ -653,14 +769,39 @@
             <div class="row-scroll" id="homeContinueScroll"></div>
           </div>
 
-          <div class="row" id="homeRecMoviesRow" style="display: none">
-            <div class="row-title">Recommended movies for you</div>
-            <div class="row-scroll" id="homeRecMoviesScroll"></div>
+          <!-- Top Picks for Movies -->
+          <div class="row" id="homeTopPicksMoviesRow" style="display: none">
+            <div class="row-title">🌟 Top Picks for Movies</div>
+            <div class="row-scroll" id="homeTopPicksMoviesScroll"></div>
           </div>
 
-          <div class="row" id="homeRecTvRow" style="display: none">
-            <div class="row-title">Recommended series for you</div>
-            <div class="row-scroll" id="homeRecTvScroll"></div>
+          <!-- Top Picks for Shows -->
+          <div class="row" id="homeTopPicksShowsRow" style="display: none">
+            <div class="row-title">🌟 Top Picks for Shows</div>
+            <div class="row-scroll" id="homeTopPicksShowsScroll"></div>
+          </div>
+
+          <!-- Because You Watched with Dropdown -->
+          <div class="row" id="homeBecauseRow" style="display: none">
+            <div class="row-header">
+              <div class="row-title" id="homeBecauseTitle">Because you watched</div>
+              <select id="becauseSelector" class="row-selector">
+                <option value="">Select a title...</option>
+              </select>
+            </div>
+            <div class="row-scroll" id="homeBecauseScroll"></div>
+          </div>
+
+          <!-- More Like This (Genre-based) -->
+          <div class="row" id="homeMoreLikeThisRow" style="display: none">
+            <div class="row-title" id="homeMoreLikeThisTitle">More Like This</div>
+            <div class="row-scroll" id="homeMoreLikeThisScroll"></div>
+          </div>
+
+          <!-- Trending in Your Genres -->
+          <div class="row" id="homeTrendingGenresRow" style="display: none">
+            <div class="row-title" id="homeTrendingGenresTitle">Trending in Your Favorite Genres</div>
+            <div class="row-scroll" id="homeTrendingGenresScroll"></div>
           </div>
 
           <div class="row">
@@ -677,14 +818,49 @@
         </section>
       </section>
 
-      <!-- Movies browse view -->
+      <!-- Movies browse view with filters -->
       <section id="moviesView" class="view">
         <div class="browse-header">
           <div class="browse-title" id="moviesBrowseHeading">
             Browse movies
           </div>
         </div>
-        <div id="movieGenresBar" class="genres-bar"></div>
+        
+        <!-- Advanced Filter Panel -->
+        <div class="filter-panel">
+          <div class="filter-group">
+            <div class="filter-label">GENRE</div>
+            <select id="movieGenreFilter" class="filter-select">
+              <option value="">All Genres</option>
+            </select>
+          </div>
+          
+          <div class="filter-group">
+            <div class="filter-label">YEAR RANGE</div>
+            <div class="year-range">
+              <input type="number" id="movieYearFrom" class="year-input" placeholder="From" min="1900" max="2025">
+              <span>to</span>
+              <input type="number" id="movieYearTo" class="year-input" placeholder="To" min="1900" max="2025">
+            </div>
+          </div>
+          
+          <div class="filter-group">
+            <div class="filter-label">SORT BY</div>
+            <select id="movieSortBy" class="filter-select">
+              <option value="popularity.desc">Most Popular</option>
+              <option value="vote_average.desc">Top Rated</option>
+              <option value="release_date.desc">Newest First</option>
+              <option value="release_date.asc">Oldest First</option>
+            </select>
+          </div>
+          
+          <div class="filter-actions">
+            <button id="applyMovieFilters" class="filter-btn filter-btn-primary">Apply Filters</button>
+            <button id="resetMovieFilters" class="filter-btn filter-btn-secondary">Reset</button>
+          </div>
+        </div>
+        
+        <div id="movieGenresBar" class="genres-bar" style="display: none;"></div>
         <div class="small-muted" id="moviesBrowseTitle">
           All movies
         </div>
@@ -696,14 +872,49 @@
         </div>
       </section>
 
-      <!-- Shows browse view -->
+      <!-- Shows browse view with filters -->
       <section id="tvView" class="view">
         <div class="browse-header">
           <div class="browse-title" id="tvBrowseHeading">
             Browse shows
           </div>
         </div>
-        <div id="tvGenresBar" class="genres-bar"></div>
+        
+        <!-- Advanced Filter Panel -->
+        <div class="filter-panel">
+          <div class="filter-group">
+            <div class="filter-label">GENRE</div>
+            <select id="tvGenreFilter" class="filter-select">
+              <option value="">All Genres</option>
+            </select>
+          </div>
+          
+          <div class="filter-group">
+            <div class="filter-label">YEAR RANGE</div>
+            <div class="year-range">
+              <input type="number" id="tvYearFrom" class="year-input" placeholder="From" min="1900" max="2025">
+              <span>to</span>
+              <input type="number" id="tvYearTo" class="year-input" placeholder="To" min="1900" max="2025">
+            </div>
+          </div>
+          
+          <div class="filter-group">
+            <div class="filter-label">SORT BY</div>
+            <select id="tvSortBy" class="filter-select">
+              <option value="popularity.desc">Most Popular</option>
+              <option value="vote_average.desc">Top Rated</option>
+              <option value="first_air_date.desc">Newest First</option>
+              <option value="first_air_date.asc">Oldest First</option>
+            </select>
+          </div>
+          
+          <div class="filter-actions">
+            <button id="applyTvFilters" class="filter-btn filter-btn-primary">Apply Filters</button>
+            <button id="resetTvFilters" class="filter-btn filter-btn-secondary">Reset</button>
+          </div>
+        </div>
+        
+        <div id="tvGenresBar" class="genres-bar" style="display: none;"></div>
         <div class="small-muted" id="tvBrowseTitle">
           All shows
         </div>
@@ -780,12 +991,10 @@
 
     <script>
       // 0. Config
-
       const TMDB_API_KEY = "424df2aeed22eec623b187984f5f7791";
       const TMDB_BASE = "https://api.themoviedb.org/3";
       const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w1280";
-      const TMDB_POSTER_BASE =
-        "https://image.tmdb.org/t/p/w300_and_h450_bestv2";
+      const TMDB_POSTER_BASE = "https://image.tmdb.org/t/p/w300_and_h450_bestv2";
 
       const PLAYER_COLOR = "e50914";
       const API_BASE = "https://myflix-api.henoksflix.workers.dev";
@@ -804,13 +1013,27 @@
       let currentProfile = null;
       let currentView = "profiles";
 
-      let moviesBrowseCurrentGenre = null;
+      // Filter states
+      let movieFilters = {
+        genre: null,
+        yearFrom: null,
+        yearTo: null,
+        sortBy: "popularity.desc"
+      };
+      
+      let tvFilters = {
+        genre: null,
+        yearFrom: null,
+        yearTo: null,
+        sortBy: "popularity.desc"
+      };
+      
       let moviesBrowseItems = [];
       let moviesBrowseNextPage = 1;
-
-      let tvBrowseCurrentGenre = null;
       let tvBrowseItems = [];
       let tvBrowseNextPage = 1;
+      
+      let currentBecauseSeed = null;
 
       let heroItems = [];
       let heroIndex = 0;
@@ -819,15 +1042,18 @@
       let currentItem = null;
       let playbackProfile = null;
 
-      // Tracking what we last flushed to backend, to avoid duplicate KV writes
       let lastFlushedKey = null;
       let lastFlushedTimestamp = null;
-
-      // Debounce for profiles save to backend
       let profilesSaveTimer = null;
 
-      // 1. DOM references
+      // User taste profile
+      let userTasteProfile = {
+        genreAffinity: {},
+        recentlyWatched: [],
+        favoriteDecades: {}
+      };
 
+      // DOM references
       const homeLogo = document.getElementById("homeLogo");
       const navHome = document.getElementById("navHome");
       const navMovies = document.getElementById("navMovies");
@@ -847,53 +1073,55 @@
       const searchView = document.getElementById("searchView");
       const detailView = document.getElementById("detailView");
 
-      // Home hero
       const homeHeroBg = document.getElementById("homeHeroBg");
       const homeHeroTitle = document.getElementById("homeHeroTitle");
       const homeHeroMeta = document.getElementById("homeHeroMeta");
-      const homeHeroDescription =
-        document.getElementById("homeHeroDescription");
+      const homeHeroDescription = document.getElementById("homeHeroDescription");
       const homeHeroPlayBtn = document.getElementById("homeHeroPlayBtn");
       const homeHeroInfoBtn = document.getElementById("homeHeroInfoBtn");
       const homeHeroDots = document.getElementById("homeHeroDots");
 
-      // Home rows
       const homeContinueRow = document.getElementById("homeContinueRow");
       const homeContinueScroll = document.getElementById("homeContinueScroll");
-      const homeRecMoviesRow = document.getElementById("homeRecMoviesRow");
-      const homeRecMoviesScroll =
-        document.getElementById("homeRecMoviesScroll");
-      const homeRecTvRow = document.getElementById("homeRecTvRow");
-      const homeRecTvScroll = document.getElementById("homeRecTvScroll");
-      const homeMoviesRowTitle = document.getElementById("homeMoviesRowTitle");
+      const homeTopPicksMoviesRow = document.getElementById("homeTopPicksMoviesRow");
+      const homeTopPicksMoviesScroll = document.getElementById("homeTopPicksMoviesScroll");
+      const homeTopPicksShowsRow = document.getElementById("homeTopPicksShowsRow");
+      const homeTopPicksShowsScroll = document.getElementById("homeTopPicksShowsScroll");
+      const homeBecauseRow = document.getElementById("homeBecauseRow");
+      const homeBecauseScroll = document.getElementById("homeBecauseScroll");
+      const homeBecauseTitle = document.getElementById("homeBecauseTitle");
+      const becauseSelector = document.getElementById("becauseSelector");
+      const homeMoreLikeThisRow = document.getElementById("homeMoreLikeThisRow");
+      const homeMoreLikeThisScroll = document.getElementById("homeMoreLikeThisScroll");
+      const homeMoreLikeThisTitle = document.getElementById("homeMoreLikeThisTitle");
+      const homeTrendingGenresRow = document.getElementById("homeTrendingGenresRow");
+      const homeTrendingGenresScroll = document.getElementById("homeTrendingGenresScroll");
+      const homeTrendingGenresTitle = document.getElementById("homeTrendingGenresTitle");
       const homeMoviesRow = document.getElementById("homeMoviesRow");
-      const homeTvRowTitle = document.getElementById("homeTvRowTitle");
       const homeTvRow = document.getElementById("homeTvRow");
 
-      // Movies browse
-      const moviesBrowseHeading =
-        document.getElementById("moviesBrowseHeading");
-      const movieGenresBar = document.getElementById("movieGenresBar");
-      const moviesBrowseTitle = document.getElementById("moviesBrowseTitle");
       const moviesBrowseGrid = document.getElementById("moviesBrowseGrid");
       const moviesLoadMoreBtn = document.getElementById("moviesLoadMoreBtn");
+      const movieGenreFilter = document.getElementById("movieGenreFilter");
+      const movieYearFrom = document.getElementById("movieYearFrom");
+      const movieYearTo = document.getElementById("movieYearTo");
+      const movieSortBy = document.getElementById("movieSortBy");
+      const applyMovieFilters = document.getElementById("applyMovieFilters");
+      const resetMovieFilters = document.getElementById("resetMovieFilters");
 
-      // Tv browse
-      const tvBrowseHeading = document.getElementById("tvBrowseHeading");
-      const tvGenresBar = document.getElementById("tvGenresBar");
-      const tvBrowseTitle = document.getElementById("tvBrowseTitle");
       const tvBrowseGrid = document.getElementById("tvBrowseGrid");
       const tvLoadMoreBtn = document.getElementById("tvLoadMoreBtn");
+      const tvGenreFilter = document.getElementById("tvGenreFilter");
+      const tvYearFrom = document.getElementById("tvYearFrom");
+      const tvYearTo = document.getElementById("tvYearTo");
+      const tvSortBy = document.getElementById("tvSortBy");
+      const applyTvFilters = document.getElementById("applyTvFilters");
+      const resetTvFilters = document.getElementById("resetTvFilters");
 
-      // Search view
-      const searchMainTitle = document.getElementById("searchMainTitle");
-      const searchMoviesRowTitle =
-        document.getElementById("searchMoviesRowTitle");
       const searchMoviesRow = document.getElementById("searchMoviesRow");
-      const searchTvRowTitle = document.getElementById("searchTvRowTitle");
       const searchTvRow = document.getElementById("searchTvRow");
+      const searchMainTitle = document.getElementById("searchMainTitle");
 
-      // Detail view
       const detailTitle = document.getElementById("detailTitle");
       const detailMeta = document.getElementById("detailMeta");
       const detailDescription = document.getElementById("detailDescription");
@@ -901,11 +1129,9 @@
       const detailTypeBadge = document.getElementById("detailTypeBadge");
       const detailSeasonBadge = document.getElementById("detailSeasonBadge");
       const playerFrame = document.getElementById("playerFrame");
-      const detailProgressText =
-        document.getElementById("detailProgressText");
+      const detailProgressText = document.getElementById("detailProgressText");
 
-      // 2. Helpers
-
+      // Helper functions
       function setNavActive(which) {
         navHome.classList.toggle("active", which === "home");
         navMovies.classList.toggle("active", which === "movies");
@@ -925,9 +1151,7 @@
         if (!rec) return;
 
         const key = `${currentProfile}:${rec.mediaType}:${rec.id}:${rec.season || 0}:${rec.episode || 0}`;
-        if (lastFlushedKey === key && lastFlushedTimestamp === rec.timestamp) {
-          return;
-        }
+        if (lastFlushedKey === key && lastFlushedTimestamp === rec.timestamp) return;
 
         lastFlushedKey = key;
         lastFlushedTimestamp = rec.timestamp;
@@ -940,15 +1164,12 @@
       }
 
       function showView(name) {
-        // Leaving the player view, flush once and stop audio
         if (currentView === "detail" && name !== "detail") {
           flushCurrentPlaybackToBackend();
           stopPlayback();
         }
 
-        document.querySelectorAll(".view").forEach((v) =>
-          v.classList.remove("active")
-        );
+        document.querySelectorAll(".view").forEach((v) => v.classList.remove("active"));
 
         if (name === "home") {
           homeView.classList.add("active");
@@ -985,17 +1206,11 @@
         const h = Math.floor(sec / 3600);
         const m = Math.floor((sec % 3600) / 60);
         const s = sec % 60;
-        if (h > 0) {
-          return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(
-            2,
-            "0"
-          )}`;
-        }
+        if (h > 0) return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
         return `${m}:${String(s).padStart(2, "0")}`;
       }
 
-      // 3. Profiles local storage
-
+      // Profiles
       function loadProfilesFromStorage() {
         try {
           const raw = localStorage.getItem(PROFILES_KEY);
@@ -1014,9 +1229,7 @@
       function updateProfileHeader() {
         if (currentProfile) {
           profileNameLabel.textContent = currentProfile;
-          profileAvatar.textContent = currentProfile[0]
-            ? currentProfile[0].toUpperCase()
-            : "?";
+          profileAvatar.textContent = currentProfile[0] ? currentProfile[0].toUpperCase() : "?";
         } else {
           profileNameLabel.textContent = "Profile";
           profileAvatar.textContent = "?";
@@ -1034,29 +1247,14 @@
         keysToRemove.forEach((k) => localStorage.removeItem(k));
       }
 
-      // 3b. Profiles backend
-
       async function loadProfilesFromBackend() {
         try {
-          console.log(
-            "[MyFlix] Fetching profiles from backend",
-            API_BASE + "/profiles/list"
-          );
           const res = await fetch(API_BASE + "/profiles/list");
           const text = await res.text().catch(() => "");
-          console.log(
-            "[MyFlix] Backend /profiles/list raw response",
-            res.status,
-            text
-          );
           if (!res.ok) throw new Error("Bad status " + res.status);
           const json = JSON.parse(text || "{}");
           if (!json.ok || !Array.isArray(json.profiles)) return [];
-          return json.profiles
-            .map((p) => ({
-              name: (p && p.name ? String(p.name) : "").trim()
-            }))
-            .filter((p) => p.name);
+          return json.profiles.map((p) => ({ name: (p && p.name ? String(p.name) : "").trim() })).filter((p) => p.name);
         } catch (e) {
           console.error("Failed to load profiles from backend", e);
           return [];
@@ -1068,24 +1266,12 @@
         if (profilesSaveTimer) clearTimeout(profilesSaveTimer);
         profilesSaveTimer = setTimeout(async () => {
           try {
-            const payload = {
-              profiles: profiles.map((p) => ({ name: p.name }))
-            };
-            console.log(
-              "[MyFlix] Saving profiles to backend",
-              JSON.stringify(payload)
-            );
-            const res = await fetch(API_BASE + "/profiles/save", {
+            const payload = { profiles: profiles.map((p) => ({ name: p.name })) };
+            await fetch(API_BASE + "/profiles/save", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(payload)
             });
-            const text = await res.text().catch(() => "");
-            console.log(
-              "[MyFlix] Backend /profiles/save response",
-              res.status,
-              text
-            );
           } catch (e) {
             console.error("Failed to save profiles to backend", e);
           }
@@ -1094,7 +1280,6 @@
 
       function renderProfiles() {
         profilesGrid.innerHTML = "";
-
         profiles.forEach((p) => {
           const wrapper = document.createElement("div");
           wrapper.className = "profile-card-wrapper";
@@ -1102,9 +1287,7 @@
           const card = document.createElement("div");
           card.className = "profile-card";
           card.textContent = p.name;
-          card.addEventListener("click", () => {
-            setCurrentProfile(p.name);
-          });
+          card.addEventListener("click", () => setCurrentProfile(p.name));
 
           const actions = document.createElement("div");
           actions.className = "profile-card-actions";
@@ -1131,9 +1314,7 @@
             const toMove = [];
             for (let i = 0; i < localStorage.length; i++) {
               const key = localStorage.key(i);
-              if (key.startsWith(oldPrefix)) {
-                toMove.push(key);
-              }
+              if (key.startsWith(oldPrefix)) toMove.push(key);
             }
             toMove.forEach((oldKey) => {
               const val = localStorage.getItem(oldKey);
@@ -1148,7 +1329,6 @@
               updateProfileHeader();
               renderHomeRows();
             }
-
             renderProfiles();
           });
 
@@ -1156,18 +1336,10 @@
           deleteBtn.textContent = "Delete";
           deleteBtn.addEventListener("click", (evt) => {
             evt.stopPropagation();
-            if (
-              !confirm(
-                `Delete profile "${p.name}" and its local watch history?`
-              )
-            ) {
-              return;
-            }
+            if (!confirm(`Delete profile "${p.name}" and its local watch history?`)) return;
             clearProfileProgress(p.name);
             profiles = profiles.filter((x) => x !== p);
-            if (profiles.length === 0) {
-              profiles = [{ name: "You" }, { name: "Guest" }];
-            }
+            if (profiles.length === 0) profiles = [{ name: "You" }, { name: "Guest" }];
             saveProfilesToStorage();
             if (currentProfile === p.name) {
               currentProfile = null;
@@ -1180,10 +1352,8 @@
 
           actions.appendChild(editBtn);
           actions.appendChild(deleteBtn);
-
           wrapper.appendChild(card);
           wrapper.appendChild(actions);
-
           profilesGrid.appendChild(wrapper);
         });
       }
@@ -1197,8 +1367,7 @@
         showView("home");
       }
 
-      // 4. Progress local storage and backend
-
+      // Progress functions
       function saveProgressLocal(data) {
         const profile = data.profile || playbackProfile || currentProfile;
         if (!profile) return;
@@ -1222,6 +1391,10 @@
         };
 
         localStorage.setItem(key, JSON.stringify(record));
+        
+        if (record.progress > 10) {
+          updateUserTasteProfile(record);
+        }
       }
 
       function loadAllProgressLocal() {
@@ -1254,12 +1427,7 @@
           try {
             const rec = JSON.parse(localStorage.getItem(key));
             if (!rec) continue;
-            if (
-              (rec.season || 0) === season &&
-              (rec.episode || 0) === episode
-            ) {
-              return rec;
-            }
+            if ((rec.season || 0) === season && (rec.episode || 0) === episode) return rec;
           } catch (e) {}
         }
         return null;
@@ -1268,18 +1436,7 @@
       async function saveProgressToBackend(userId, data) {
         if (!userId) return;
         try {
-          console.log("[MyFlix] Saving progress to backend", {
-            userId,
-            id: data.id,
-            mediaType: data.mediaType || data.type,
-            season: data.season || 0,
-            episode: data.episode || 0,
-            currentTime: data.currentTime || 0,
-            duration: data.duration || 0,
-            progress: data.progress || 0,
-            timestamp: data.timestamp || Date.now()
-          });
-          const res = await fetch(API_BASE + "/progress/save", {
+          await fetch(API_BASE + "/progress/save", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -1294,12 +1451,6 @@
               timestamp: data.timestamp || Date.now()
             })
           });
-          const text = await res.text().catch(() => "");
-          console.log(
-            "[MyFlix] Backend /progress/save response",
-            res.status,
-            text
-          );
         } catch (e) {
           console.error("saveProgressToBackend error", e);
         }
@@ -1308,25 +1459,14 @@
       async function syncProgressFromBackendToLocal(profileName) {
         if (!profileName) return [];
         try {
-          const url = `${API_BASE}/progress/list?userId=${encodeURIComponent(
-            profileName
-          )}`;
-          console.log("[MyFlix] Fetching progress list from backend", url);
+          const url = `${API_BASE}/progress/list?userId=${encodeURIComponent(profileName)}`;
           const res = await fetch(url);
           const text = await res.text().catch(() => "");
-          console.log(
-            "[MyFlix] Backend /progress/list raw response",
-            res.status,
-            text
-          );
           if (!res.ok) throw new Error("Bad status " + res.status);
           const json = JSON.parse(text || "{}");
-          console.log("[MyFlix] Parsed /progress/list JSON", json);
           if (!json.ok) return [];
           const list = Array.isArray(json.entries) ? json.entries : [];
-          list.forEach((entry) => {
-            saveProgressLocal({ ...entry, profile: profileName });
-          });
+          list.forEach((entry) => saveProgressLocal({ ...entry, profile: profileName }));
           return list;
         } catch (err) {
           console.error("Failed to load progress from backend", err);
@@ -1334,21 +1474,136 @@
         }
       }
 
-      // 5. TMDB helpers
+      // User taste profile
+      function updateUserTasteProfile(progressRecord) {
+        if (!progressRecord.id) return;
+        const item = ITEM_INDEX[`${progressRecord.mediaType}:${String(progressRecord.id)}`];
+        if (!item || !item.genres) return;
+        
+        const weight = Math.min(progressRecord.progress / 100, 1) * (progressRecord.mediaType === 'movie' ? 1 : 0.7);
+        
+        item.genres.forEach(genreId => {
+          userTasteProfile.genreAffinity[genreId] = (userTasteProfile.genreAffinity[genreId] || 0) + weight;
+        });
+        
+        if (item.year) {
+          const decade = Math.floor(item.year / 10) * 10;
+          userTasteProfile.favoriteDecades[decade] = (userTasteProfile.favoriteDecades[decade] || 0) + weight;
+        }
+        
+        userTasteProfile.recentlyWatched = userTasteProfile.recentlyWatched || [];
+        userTasteProfile.recentlyWatched.unshift({
+          id: item.tmdbId,
+          type: item.type,
+          title: item.title,
+          genres: item.genres,
+          year: item.year,
+          timestamp: Date.now()
+        });
+        
+        if (userTasteProfile.recentlyWatched.length > 20) userTasteProfile.recentlyWatched.pop();
+        
+        if (currentProfile) {
+          localStorage.setItem(`tasteProfile:${currentProfile}`, JSON.stringify(userTasteProfile));
+          updateBecauseSelector();
+        }
+      }
+      
+      function loadUserTasteProfile() {
+        if (!currentProfile) return;
+        try {
+          const saved = localStorage.getItem(`tasteProfile:${currentProfile}`);
+          if (saved) {
+            userTasteProfile = JSON.parse(saved);
+          } else {
+            userTasteProfile = { genreAffinity: {}, recentlyWatched: [], favoriteDecades: {} };
+          }
+        } catch (e) {
+          userTasteProfile = { genreAffinity: {}, recentlyWatched: [], favoriteDecades: {} };
+        }
+        updateBecauseSelector();
+      }
+      
+      function updateBecauseSelector() {
+        if (!becauseSelector) return;
+        becauseSelector.innerHTML = '<option value="">Select a title...</option>';
+        const recent = userTasteProfile.recentlyWatched || [];
+        recent.forEach((item, index) => {
+          const option = document.createElement("option");
+          option.value = index;
+          option.textContent = `${item.title} (${item.type === 'movie' ? 'Movie' : 'Show'})`;
+          becauseSelector.appendChild(option);
+        });
+      }
 
+      // Enhanced recommendation engine
+      function getTopGenres(limit = 3) {
+        return Object.entries(userTasteProfile.genreAffinity || {})
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, limit)
+          .map(([genreId]) => parseInt(genreId));
+      }
+      
+      function getWatchedIds() {
+        const watched = new Set();
+        const progress = loadAllProgressLocal();
+        progress.forEach(rec => {
+          if (rec.progress > 10) watched.add(`${rec.mediaType}:${String(rec.id)}`);
+        });
+        return watched;
+      }
+      
+      function calculateItemScore(item, watchedSet) {
+        if (watchedSet.has(`${item.type}:${item.tmdbId}`)) return -1;
+        let score = 0;
+        const genreAffinity = userTasteProfile.genreAffinity || {};
+        (item.genres || []).forEach(genreId => {
+          score += genreAffinity[genreId] || 0;
+        });
+        if (item.year && userTasteProfile.favoriteDecades) {
+          const decade = Math.floor(item.year / 10) * 10;
+          score += (userTasteProfile.favoriteDecades[decade] || 0) * 0.5;
+        }
+        if (item.year && item.year > 2020) score += 0.5;
+        return score;
+      }
+      
+      function getTopPicksByType(type, limit = 20) {
+        const watchedSet = getWatchedIds();
+        const candidates = type === 'movie' ? CATALOG.movies : CATALOG.tv;
+        return candidates
+          .map(item => ({ item, score: calculateItemScore(item, watchedSet) }))
+          .filter(x => x.score > 0)
+          .sort((a, b) => b.score - a.score)
+          .slice(0, limit)
+          .map(x => x.item);
+      }
+      
+      function getBecauseYouWatched(seedItem, limit = 20) {
+        if (!seedItem || !seedItem.genres) return [];
+        const seedGenres = new Set(seedItem.genres);
+        const watchedSet = getWatchedIds();
+        const candidates = [...CATALOG.movies, ...CATALOG.tv]
+          .filter(item => !watchedSet.has(`${item.type}:${item.tmdbId}`));
+        
+        return candidates.map(item => {
+          const overlap = (item.genres || []).filter(g => seedGenres.has(g)).length;
+          return { item, score: overlap * 2 + (item.year && Math.abs(item.year - seedItem.year) < 5 ? 1 : 0) };
+        })
+        .filter(x => x.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, limit)
+        .map(x => x.item);
+      }
+
+      // TMDB helpers
       async function tmdbFetch(path, params = {}) {
         const url = new URL(TMDB_BASE + path);
         url.searchParams.set("api_key", TMDB_API_KEY);
         url.searchParams.set("language", "en-US");
-        Object.entries(params).forEach(([k, v]) =>
-          url.searchParams.set(k, v)
-        );
+        Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
         const res = await fetch(url.toString());
-        if (!res.ok) {
-          const text = await res.text().catch(() => "");
-          console.error("TMDB error", res.status, path, text);
-          throw new Error("TMDB error " + res.status);
-        }
+        if (!res.ok) throw new Error("TMDB error " + res.status);
         return res.json();
       }
 
@@ -1359,45 +1614,29 @@
             tmdbFetch("/trending/tv/week", { include_adult: "false" })
           ]);
 
-          CATALOG.movies =
-            (movieData.results || []).slice(0, 40).map((r) => ({
-              id: String(r.id),
-              tmdbId: String(r.id),
-              type: "movie",
-              title: r.title || r.original_title || "Untitled",
-              year: r.release_date ? Number(r.release_date.slice(0, 4)) : "",
-              description: r.overview || "",
-              poster: r.poster_path
-                ? TMDB_POSTER_BASE + r.poster_path
-                : null,
-              backdrop: r.backdrop_path
-                ? TMDB_IMAGE_BASE + r.backdrop_path
-                : null,
-              genres: r.genre_ids || []
-            })) || [];
+          CATALOG.movies = (movieData.results || []).slice(0, 100).map((r) => ({
+            id: String(r.id), tmdbId: String(r.id), type: "movie",
+            title: r.title || r.original_title || "Untitled",
+            year: r.release_date ? Number(r.release_date.slice(0, 4)) : "",
+            description: r.overview || "",
+            poster: r.poster_path ? TMDB_POSTER_BASE + r.poster_path : null,
+            backdrop: r.backdrop_path ? TMDB_IMAGE_BASE + r.backdrop_path : null,
+            genres: r.genre_ids || []
+          }));
 
-          CATALOG.tv =
-            (tvData.results || []).slice(0, 40).map((r) => ({
-              id: String(r.id),
-              tmdbId: String(r.id),
-              type: "tv",
-              title: r.name || r.original_name || "Untitled",
-              year: r.first_air_date ? Number(r.first_air_date.slice(0, 4)) : "",
-              description: r.overview || "",
-              season: 1,
-              episode: 1,
-              poster: r.poster_path
-                ? TMDB_POSTER_BASE + r.poster_path
-                : null,
-              backdrop: r.backdrop_path
-                ? TMDB_IMAGE_BASE + r.backdrop_path
-                : null,
-              genres: r.genre_ids || []
-            })) || [];
+          CATALOG.tv = (tvData.results || []).slice(0, 100).map((r) => ({
+            id: String(r.id), tmdbId: String(r.id), type: "tv",
+            title: r.name || r.original_name || "Untitled",
+            year: r.first_air_date ? Number(r.first_air_date.slice(0, 4)) : "",
+            description: r.overview || "",
+            season: 1, episode: 1,
+            poster: r.poster_path ? TMDB_POSTER_BASE + r.poster_path : null,
+            backdrop: r.backdrop_path ? TMDB_IMAGE_BASE + r.backdrop_path : null,
+            genres: r.genre_ids || []
+          }));
 
           rememberItems(CATALOG.movies);
           rememberItems(CATALOG.tv);
-
           heroItems = CATALOG.movies.slice(0, 8);
         } catch (e) {
           console.error("fetchTrending error", e);
@@ -1409,7 +1648,7 @@
           const data = await tmdbFetch("/genre/movie/list");
           MOVIE_GENRES = data.genres || [];
           MOVIE_GENRES.forEach((g) => (MOVIE_GENRE_MAP[g.id] = g.name));
-          renderMovieGenresFilter();
+          populateGenreFilter(movieGenreFilter, MOVIE_GENRES);
         } catch (e) {
           console.error("fetchMovieGenres error", e);
         }
@@ -1420,59 +1659,37 @@
           const data = await tmdbFetch("/genre/tv/list");
           TV_GENRES = data.genres || [];
           TV_GENRES.forEach((g) => (TV_GENRE_MAP[g.id] = g.name));
-          renderTvGenresFilter();
+          populateGenreFilter(tvGenreFilter, TV_GENRES);
         } catch (e) {
           console.error("fetchTvGenres error", e);
         }
       }
 
+      function populateGenreFilter(selectElement, genres) {
+        selectElement.innerHTML = '<option value="">All Genres</option>';
+        genres.forEach(g => {
+          const option = document.createElement("option");
+          option.value = g.id;
+          option.textContent = g.name;
+          selectElement.appendChild(option);
+        });
+      }
+
       async function performTmdbSearch(query) {
         try {
-          const json = await tmdbFetch("/search/multi", {
-            query,
-            include_adult: "false"
-          });
+          const json = await tmdbFetch("/search/multi", { query, include_adult: "false" });
           const results = json.results || [];
-          const items = results
-            .filter(
-              (r) => r.media_type === "movie" || r.media_type === "tv"
-            )
-            .slice(0, 40)
-            .map((r) => {
-              if (r.media_type === "movie") {
-                return {
-                  id: String(r.id),
-                  tmdbId: String(r.id),
-                  type: "movie",
-                  title: r.title || r.original_title || "Untitled",
-                  year: r.release_date
-                    ? Number(r.release_date.slice(0, 4))
-                    : "",
-                  description: r.overview || "",
-                  poster: r.poster_path
-                    ? TMDB_POSTER_BASE + r.poster_path
-                    : null,
-                  genres: r.genre_ids || []
-                };
-              } else {
-                return {
-                  id: String(r.id),
-                  tmdbId: String(r.id),
-                  type: "tv",
-                  title: r.name || r.original_name || "Untitled",
-                  year: r.first_air_date
-                    ? Number(r.first_air_date.slice(0, 4))
-                    : "",
-                  description: r.overview || "",
-                  season: 1,
-                  episode: 1,
-                  poster: r.poster_path
-                    ? TMDB_POSTER_BASE + r.poster_path
-                    : null,
-                  genres: r.genre_ids || []
-                };
-              }
-            });
+          const items = results.filter(r => r.media_type === "movie" || r.media_type === "tv").slice(0, 40).map((r) => {
+            if (r.media_type === "movie") {
+              return { id: String(r.id), tmdbId: String(r.id), type: "movie", title: r.title || r.original_title || "Untitled",
+                year: r.release_date ? Number(r.release_date.slice(0, 4)) : "", description: r.overview || "",
+                poster: r.poster_path ? TMDB_POSTER_BASE + r.poster_path : null, genres: r.genre_ids || [] };
+            } else {
+              return { id: String(r.id), tmdbId: String(r.id), type: "tv", title: r.name || r.original_name || "Untitled",
+                year: r.first_air_date ? Number(r.first_air_date.slice(0, 4)) : "", description: r.overview || "",
+                season: 1, episode: 1, poster: r.poster_path ? TMDB_POSTER_BASE + r.poster_path : null, genres: r.genre_ids || [] };
+            }
+          });
           rememberItems(items);
           renderSearchResults(items, query);
         } catch (e) {
@@ -1480,141 +1697,89 @@
         }
       }
 
-      async function loadMoviesBrowse(genreId, reset) {
-        if (reset || genreId !== moviesBrowseCurrentGenre) {
-          moviesBrowseCurrentGenre = genreId || null;
+      async function loadMoviesWithFilters(reset = true) {
+        if (reset) {
           moviesBrowseItems = [];
           moviesBrowseNextPage = 1;
         }
 
-        const paramsBase = {
-          sort_by: "popularity.desc",
-          include_adult: "false"
+        const params = {
+          sort_by: movieFilters.sortBy,
+          include_adult: "false",
+          page: moviesBrowseNextPage
         };
-        if (moviesBrowseCurrentGenre) {
-          paramsBase.with_genres = String(moviesBrowseCurrentGenre);
-        }
+        
+        if (movieFilters.genre) params.with_genres = String(movieFilters.genre);
+        if (movieFilters.yearFrom) params["primary_release_date.gte"] = `${movieFilters.yearFrom}-01-01`;
+        if (movieFilters.yearTo) params["primary_release_date.lte"] = `${movieFilters.yearTo}-12-31`;
 
-        moviesBrowseGrid.innerHTML =
-          moviesBrowseItems.length === 0
-            ? "<div class='small-muted'>Loading...</div>"
-            : moviesBrowseGrid.innerHTML;
+        moviesBrowseGrid.innerHTML = moviesBrowseItems.length === 0 ? "<div class='small-muted'>Loading...</div>" : moviesBrowseGrid.innerHTML;
 
-        const pages = [
-          moviesBrowseNextPage,
-          moviesBrowseNextPage + 1,
-          moviesBrowseNextPage + 2,
-          moviesBrowseNextPage + 3
-        ];
-
-        let all = [];
         try {
-          for (const p of pages) {
-            const data = await tmdbFetch("/discover/movie", {
-              ...paramsBase,
-              page: String(p)
-            });
-            all = all.concat(data.results || []);
-          }
+          const data = await tmdbFetch("/discover/movie", params);
+          const newItems = (data.results || []).map((r) => ({
+            id: String(r.id), tmdbId: String(r.id), type: "movie",
+            title: r.title || r.original_title || "Untitled",
+            year: r.release_date ? Number(r.release_date.slice(0, 4)) : "",
+            description: r.overview || "",
+            poster: r.poster_path ? TMDB_POSTER_BASE + r.poster_path : null,
+            genres: r.genre_ids || []
+          }));
+          
+          moviesBrowseItems = moviesBrowseItems.concat(newItems);
+          rememberItems(newItems);
+          moviesBrowseNextPage++;
+          renderMoviesBrowseGrid();
         } catch (e) {
-          console.error("discover movies error", e);
+          console.error("loadMoviesWithFilters error", e);
         }
-
-        moviesBrowseNextPage += 4;
-
-        const newItems = all.map((r) => ({
-          id: String(r.id),
-          tmdbId: String(r.id),
-          type: "movie",
-          title: r.title || r.original_title || "Untitled",
-          year: r.release_date ? Number(r.release_date.slice(0, 4)) : "",
-          description: r.overview || "",
-          poster: r.poster_path ? TMDB_POSTER_BASE + r.poster_path : null,
-          genres: r.genre_ids || []
-        }));
-
-        moviesBrowseItems = moviesBrowseItems.concat(newItems);
-        rememberItems(newItems);
-        renderMoviesBrowseGrid();
       }
 
-      async function loadTvBrowse(genreId, reset) {
-        if (reset || genreId !== tvBrowseCurrentGenre) {
-          tvBrowseCurrentGenre = genreId || null;
+      async function loadTvWithFilters(reset = true) {
+        if (reset) {
           tvBrowseItems = [];
           tvBrowseNextPage = 1;
         }
 
-        const paramsBase = {
-          sort_by: "popularity.desc",
-          include_adult: "false"
+        const params = {
+          sort_by: tvFilters.sortBy,
+          include_adult: "false",
+          page: tvBrowseNextPage
         };
-        if (tvBrowseCurrentGenre) {
-          paramsBase.with_genres = String(tvBrowseCurrentGenre);
-        }
+        
+        if (tvFilters.genre) params.with_genres = String(tvFilters.genre);
+        if (tvFilters.yearFrom) params["first_air_date.gte"] = `${tvFilters.yearFrom}-01-01`;
+        if (tvFilters.yearTo) params["first_air_date.lte"] = `${tvFilters.yearTo}-12-31`;
 
-        tvBrowseGrid.innerHTML =
-          tvBrowseItems.length === 0
-            ? "<div class='small-muted'>Loading...</div>"
-            : tvBrowseGrid.innerHTML;
+        tvBrowseGrid.innerHTML = tvBrowseItems.length === 0 ? "<div class='small-muted'>Loading...</div>" : tvBrowseGrid.innerHTML;
 
-        const pages = [
-          tvBrowseNextPage,
-          tvBrowseNextPage + 1,
-          tvBrowseNextPage + 2,
-          tvBrowseNextPage + 3
-        ];
-        let all = [];
         try {
-          for (const p of pages) {
-            const data = await tmdbFetch("/discover/tv", {
-              ...paramsBase,
-              page: String(p)
-            });
-            all = all.concat(data.results || []);
-          }
+          const data = await tmdbFetch("/discover/tv", params);
+          const newItems = (data.results || []).map((r) => ({
+            id: String(r.id), tmdbId: String(r.id), type: "tv",
+            title: r.name || r.original_name || "Untitled",
+            year: r.first_air_date ? Number(r.first_air_date.slice(0, 4)) : "",
+            description: r.overview || "",
+            season: 1, episode: 1,
+            poster: r.poster_path ? TMDB_POSTER_BASE + r.poster_path : null,
+            genres: r.genre_ids || []
+          }));
+          
+          tvBrowseItems = tvBrowseItems.concat(newItems);
+          rememberItems(newItems);
+          tvBrowseNextPage++;
+          renderTvBrowseGrid();
         } catch (e) {
-          console.error("discover tv error", e);
+          console.error("loadTvWithFilters error", e);
         }
-
-        tvBrowseNextPage += 4;
-
-        const newItems = all.map((r) => ({
-          id: String(r.id),
-          tmdbId: String(r.id),
-          type: "tv",
-          title: r.name || r.original_name || "Untitled",
-          year: r.first_air_date ? Number(r.first_air_date.slice(0, 4)) : "",
-          description: r.overview || "",
-          season: 1,
-          episode: 1,
-          poster: r.poster_path ? TMDB_POSTER_BASE + r.poster_path : null,
-          genres: r.genre_ids || []
-        }));
-
-        tvBrowseItems = tvBrowseItems.concat(newItems);
-        rememberItems(newItems);
-        renderTvBrowseGrid();
       }
-
-      // 6. Player URL and detail load
 
       function buildPlayerUrl(item, resumeFromSeconds) {
         const base = "https://www.vidking.net/embed";
-      
-        if (item.type === "movie") {
-          return `${base}/movie/${item.tmdbId}?color=${PLAYER_COLOR}&autoPlay=true`;
-        }
-      
-        if (item.type === "tv") {
-          const season = item.season || 1;
-          const episode = item.episode || 1;
-          return `${base}/tv/${item.tmdbId}/${season}/${episode}?color=${PLAYER_COLOR}&autoPlay=true&nextEpisode=true&episodeSelector=true`;
-        }
-      
+        if (item.type === "movie") return `${base}/movie/${item.tmdbId}?color=e50914&autoPlay=true`;
+        if (item.type === "tv") return `${base}/tv/${item.tmdbId}/${item.season || 1}/${item.episode || 1}?color=e50914&autoPlay=true&nextEpisode=true&episodeSelector=true`;
         return "";
       }
-
 
       function loadItem(item, resume) {
         currentItem = item;
@@ -1624,20 +1789,15 @@
         showView("detail");
 
         detailTitle.textContent = item.title;
-        detailMeta.textContent =
-          (item.type === "movie" ? "Movie" : "Series") +
-          (item.year ? " • " + item.year : "");
+        detailMeta.textContent = (item.type === "movie" ? "Movie" : "Series") + (item.year ? " • " + item.year : "");
         detailDescription.textContent = item.description || "";
 
         detailTypeBadge.style.display = "inline-block";
-        detailTypeBadge.textContent =
-          item.type === "movie" ? "Movie" : "TV series";
+        detailTypeBadge.textContent = item.type === "movie" ? "Movie" : "TV series";
         if (item.type === "tv") {
           detailSeasonBadge.style.display = "inline-block";
           detailSeasonBadge.textContent = `Season ${item.season || 1}`;
-        } else {
-          detailSeasonBadge.style.display = "none";
-        }
+        } else detailSeasonBadge.style.display = "none";
 
         detailStatus.textContent = "Loading";
         detailProgressText.textContent = "";
@@ -1646,32 +1806,21 @@
         const saved = loadProgressForItem(item);
         if (resume && saved && saved.currentTime && saved.progress < 98) {
           resumeSeconds = saved.currentTime;
-          detailProgressText.textContent = `Resume at ${formatTime(
-            resumeSeconds
-          )} • ${saved.progress.toFixed(1)}% watched`;
+          detailProgressText.textContent = `Resume at ${formatTime(resumeSeconds)} • ${saved.progress.toFixed(1)}% watched`;
         }
 
-        const url = buildPlayerUrl(item, resumeSeconds);
-        playerFrame.src = url;
+        playerFrame.src = buildPlayerUrl(item, resumeSeconds);
       }
-
-      // 7. Cards and rows
 
       function createCard(item, progressRec) {
         const card = document.createElement("div");
         card.className = "card";
         card.dataset.type = item.type;
         card.dataset.id = item.tmdbId;
-        if (item.type === "tv") {
-          card.dataset.season = item.season || 1;
-          card.dataset.episode = item.episode || 1;
-        }
 
         const poster = document.createElement("div");
         poster.className = "card-poster";
-        poster.style.backgroundImage = item.poster
-          ? `url("${item.poster}")`
-          : 'linear-gradient(135deg, #333 0%, #555 50%, #222 100%)';
+        poster.style.backgroundImage = item.poster ? `url("${item.poster}")` : 'linear-gradient(135deg, #333 0%, #555 50%, #222 100%)';
 
         const chip = document.createElement("div");
         chip.className = "chip";
@@ -1687,20 +1836,11 @@
         const meta = document.createElement("div");
         meta.className = "card-meta";
         let metaText = item.year ? String(item.year) : "";
-        if (item.type === "tv") {
-          metaText += metaText ? " • " : "";
-          metaText += `S${item.season || 1}E${item.episode || 1}`;
-        }
-        if (progressRec && progressRec.progress) {
-          const p = progressRec.progress.toFixed(1);
-          metaText += metaText ? " • " : "";
-          metaText += `${p}% watched`;
-        }
+        if (progressRec && progressRec.progress) metaText += (metaText ? " • " : "") + `${progressRec.progress.toFixed(1)}% watched`;
         meta.textContent = metaText;
 
         body.appendChild(title);
         body.appendChild(meta);
-
         card.appendChild(poster);
         card.appendChild(chip);
         card.appendChild(body);
@@ -1710,10 +1850,7 @@
           bar.className = "progress-bar";
           const inner = document.createElement("div");
           inner.className = "progress-inner";
-          inner.style.width = `${Math.min(
-            progressRec.progress,
-            100
-          )}%`;
+          inner.style.width = `${Math.min(progressRec.progress, 100)}%`;
           bar.appendChild(inner);
           card.appendChild(bar);
         }
@@ -1722,592 +1859,236 @@
         return card;
       }
 
-      async function getItemForProgress(rec) {
-        if (!rec.id || !rec.mediaType) return null;
-
-        const key = `${rec.mediaType}:${String(rec.id)}`;
-        let item = ITEM_INDEX[key];
-        if (item) return item;
-
-        // Not in memory yet. Fetch full details from TMDB so we can build a card.
-        try {
-          const path =
-            rec.mediaType === "movie" ? `/movie/${rec.id}` : `/tv/${rec.id}`;
-          const data = await tmdbFetch(path);
-
-          if (!data || !data.id) {
-            return null;
-          }
-
-          if (rec.mediaType === "movie") {
-            item = {
-              id: String(data.id),
-              tmdbId: String(data.id),
-              type: "movie",
-              title: data.title || data.original_title || "Untitled",
-              year: data.release_date
-                ? Number(data.release_date.slice(0, 4))
-                : "",
-              description: data.overview || "",
-              poster: data.poster_path
-                ? TMDB_POSTER_BASE + data.poster_path
-                : null,
-              backdrop: data.backdrop_path
-                ? TMDB_IMAGE_BASE + data.backdrop_path
-                : null,
-              genres: (data.genres || []).map((g) => g.id)
-            };
-          } else {
-            item = {
-              id: String(data.id),
-              tmdbId: String(data.id),
-              type: "tv",
-              title: data.name || data.original_name || "Untitled",
-              year: data.first_air_date
-                ? Number(data.first_air_date.slice(0, 4))
-                : "",
-              description: data.overview || "",
-              season: rec.season || 1,
-              episode: rec.episode || 1,
-              poster: data.poster_path
-                ? TMDB_POSTER_BASE + data.poster_path
-                : null,
-              backdrop: data.backdrop_path
-                ? TMDB_IMAGE_BASE + data.backdrop_path
-                : null,
-              genres: (data.genres || []).map((g) => g.id)
-            };
-          }
-
-          rememberItems([item]);
-          return item;
-        } catch (e) {
-          console.error("getItemForProgress tmdb error", e);
-          return null;
-        }
-      }
-
-      async function renderHomeContinueAndRecent() {
+      async function renderHomeContinue() {
         const progressEntries = loadAllProgressLocal();
         homeContinueScroll.innerHTML = "";
-
-        // Map from "mediaType:id" to the latest incomplete record
         const latestByShow = {};
 
         for (const rec of progressEntries) {
           if (!rec.id || !rec.mediaType) continue;
-
-          const progressValue =
-            typeof rec.progress === "number" ? rec.progress : 0;
-
-          // Ignore entries that are basically unwatched or fully watched
-          if (progressValue <= 0 || progressValue >= 98) {
-            continue;
-          }
-
+          const progressValue = typeof rec.progress === "number" ? rec.progress : 0;
+          if (progressValue <= 0 || progressValue >= 98) continue;
           const showKey = `${rec.mediaType}:${String(rec.id)}`;
-
-          // progressEntries are already sorted newest first,
-          // so the first time we see a showKey is the latest episode.
-          if (!latestByShow[showKey]) {
-            latestByShow[showKey] = rec;
-          }
+          if (!latestByShow[showKey]) latestByShow[showKey] = rec;
         }
 
-        const recsToShow = Object.values(latestByShow);
-
-        for (const rec of recsToShow) {
-          const item = await getItemForProgress(rec);
+        for (const rec of Object.values(latestByShow)) {
+          const item = ITEM_INDEX[`${rec.mediaType}:${String(rec.id)}`];
           if (!item) continue;
-
           const clone = { ...item };
-
-          // Make sure TV cards show the correct season and episode
-          if (clone.type === "tv") {
-            clone.season = rec.season || item.season || 1;
-            clone.episode = rec.episode || item.episode || 1;
-          }
-
+          if (clone.type === "tv") { clone.season = rec.season || 1; clone.episode = rec.episode || 1; }
           const card = createCard(clone, rec);
           homeContinueScroll.appendChild(card);
         }
-
-        homeContinueRow.style.display =
-          homeContinueScroll.children.length > 0 ? "block" : "none";
-      }
-
-      function computeRecommendations() {
-        const progressEntries = loadAllProgressLocal();
-        const movieGenreCounts = {};
-        const tvGenreCounts = {};
-        const watchedMovies = new Set();
-        const watchedTv = new Set();
-
-        progressEntries.forEach((rec) => {
-          if (!rec.id || !rec.mediaType) return;
-          const item = ITEM_INDEX[`${rec.mediaType}:${String(rec.id)}`];
-          if (!item || !item.genres) return;
-          const weight =
-            typeof rec.progress === "number" ? rec.progress : 1;
-          if (rec.mediaType === "movie") {
-            watchedMovies.add(String(rec.id));
-            item.genres.forEach((g) => {
-              movieGenreCounts[g] = (movieGenreCounts[g] || 0) + weight;
-            });
-          } else if (rec.mediaType === "tv") {
-            watchedTv.add(String(rec.id));
-            item.genres.forEach((g) => {
-              tvGenreCounts[g] = (tvGenreCounts[g] || 0) + weight;
-            });
-          }
-        });
-
-        function scoreItem(item, counts) {
-          let score = 0;
-          (item.genres || []).forEach((g) => {
-            score += counts[g] || 0;
-          });
-          return score;
-        }
-
-        const movieCandidates = CATALOG.movies.filter(
-          (m) => !watchedMovies.has(String(m.tmdbId))
-        );
-        const tvCandidates = CATALOG.tv.filter(
-          (t) => !watchedTv.has(String(t.tmdbId))
-        );
-
-        const movieRecs = movieCandidates
-          .map((it) => ({
-            item: it,
-            score: scoreItem(it, movieGenreCounts)
-          }))
-          .filter((x) => x.score > 0)
-          .sort((a, b) => b.score - a.score)
-          .slice(0, 20)
-          .map((x) => x.item);
-
-        const tvRecs = tvCandidates
-          .map((it) => ({
-            item: it,
-            score: scoreItem(it, tvGenreCounts)
-          }))
-          .filter((x) => x.score > 0)
-          .sort((a, b) => b.score - a.score)
-          .slice(0, 20)
-          .map((x) => x.item);
-
-        return { movieRecs, tvRecs };
-      }
-
-      function renderHomeRecommendations() {
-        const { movieRecs, tvRecs } = computeRecommendations();
-
-        homeRecMoviesScroll.innerHTML = "";
-        movieRecs.forEach((item) => {
-          const prog = loadProgressForItem(item);
-          const card = createCard(item, prog);
-          homeRecMoviesScroll.appendChild(card);
-        });
-        homeRecMoviesRow.style.display =
-          homeRecMoviesScroll.children.length > 0 ? "block" : "none";
-
-        homeRecTvScroll.innerHTML = "";
-        tvRecs.forEach((item) => {
-          const prog = loadProgressForItem(item);
-          const card = createCard(item, prog);
-          homeRecTvScroll.appendChild(card);
-        });
-        homeRecTvRow.style.display =
-          homeRecTvScroll.children.length > 0 ? "block" : "none";
+        homeContinueRow.style.display = homeContinueScroll.children.length > 0 ? "block" : "none";
       }
 
       function renderHomeRows() {
         if (!currentProfile) return;
+        loadUserTasteProfile();
+
+        const topMoviePicks = getTopPicksByType('movie', 20);
+        const topShowPicks = getTopPicksByType('tv', 20);
+        
+        renderRow(homeTopPicksMoviesScroll, topMoviePicks);
+        homeTopPicksMoviesRow.style.display = topMoviePicks.length > 0 ? "block" : "none";
+        
+        renderRow(homeTopPicksShowsScroll, topShowPicks);
+        homeTopPicksShowsRow.style.display = topShowPicks.length > 0 ? "block" : "none";
+
+        if (currentBecauseSeed) {
+          const becauseRecs = getBecauseYouWatched(currentBecauseSeed, 20);
+          renderRow(homeBecauseScroll, becauseRecs);
+          homeBecauseTitle.textContent = `Because you watched ${currentBecauseSeed.title}`;
+          homeBecauseRow.style.display = becauseRecs.length > 0 ? "block" : "none";
+        } else if (userTasteProfile.recentlyWatched && userTasteProfile.recentlyWatched.length > 0) {
+          currentBecauseSeed = userTasteProfile.recentlyWatched[0];
+          const becauseRecs = getBecauseYouWatched(currentBecauseSeed, 20);
+          renderRow(homeBecauseScroll, becauseRecs);
+          homeBecauseTitle.textContent = `Because you watched ${currentBecauseSeed.title}`;
+          homeBecauseRow.style.display = becauseRecs.length > 0 ? "block" : "none";
+        } else {
+          homeBecauseRow.style.display = "none";
+        }
 
         homeMoviesRow.innerHTML = "";
         homeTvRow.innerHTML = "";
-        homeMoviesRowTitle.textContent = "Trending movies";
-        homeTvRowTitle.textContent = "Trending series";
-
-        CATALOG.movies.forEach((item) => {
-          const prog = loadProgressForItem(item);
-          const card = createCard(item, prog);
-          homeMoviesRow.appendChild(card);
-        });
-
-        CATALOG.tv.forEach((item) => {
-          const prog = loadProgressForItem(item);
-          const card = createCard(item, prog);
-          homeTvRow.appendChild(card);
-        });
-
-        renderHomeContinueAndRecent();
-          // async, side effect only
-        renderHomeRecommendations();
+        CATALOG.movies.slice(0, 20).forEach(item => homeMoviesRow.appendChild(createCard(item, loadProgressForItem(item))));
+        CATALOG.tv.slice(0, 20).forEach(item => homeTvRow.appendChild(createCard(item, loadProgressForItem(item))));
+        
+        renderHomeContinue();
         renderHomeHero();
+      }
+      
+      function renderRow(container, items) {
+        container.innerHTML = "";
+        items.forEach(item => container.appendChild(createCard(item, loadProgressForItem(item))));
       }
 
       function renderMoviesBrowseGrid() {
         moviesBrowseGrid.innerHTML = "";
-        const title =
-          moviesBrowseCurrentGenre &&
-          MOVIE_GENRE_MAP[moviesBrowseCurrentGenre]
-            ? MOVIE_GENRE_MAP[moviesBrowseCurrentGenre]
-            : "All movies";
-        moviesBrowseTitle.textContent = title;
-        moviesBrowseItems.forEach((item) => {
-          const prog = loadProgressForItem(item);
-          const card = createCard(item, prog);
-          moviesBrowseGrid.appendChild(card);
-        });
+        let title = movieFilters.genre && MOVIE_GENRE_MAP[movieFilters.genre] ? MOVIE_GENRE_MAP[movieFilters.genre] : "All movies";
+        if (movieFilters.yearFrom || movieFilters.yearTo) title += ` (${movieFilters.yearFrom || 'Any'} - ${movieFilters.yearTo || 'Any'})`;
+        document.getElementById("moviesBrowseTitle").textContent = title;
+        moviesBrowseItems.forEach(item => moviesBrowseGrid.appendChild(createCard(item, loadProgressForItem(item))));
       }
 
       function renderTvBrowseGrid() {
         tvBrowseGrid.innerHTML = "";
-        const title =
-          tvBrowseCurrentGenre && TV_GENRE_MAP[tvBrowseCurrentGenre]
-            ? TV_GENRE_MAP[tvBrowseCurrentGenre]
-            : "All shows";
-        tvBrowseTitle.textContent = title;
-        tvBrowseItems.forEach((item) => {
-          const prog = loadProgressForItem(item);
-          const card = createCard(item, prog);
-          tvBrowseGrid.appendChild(card);
-        });
+        let title = tvFilters.genre && TV_GENRE_MAP[tvFilters.genre] ? TV_GENRE_MAP[tvFilters.genre] : "All shows";
+        if (tvFilters.yearFrom || tvFilters.yearTo) title += ` (${tvFilters.yearFrom || 'Any'} - ${tvFilters.yearTo || 'Any'})`;
+        document.getElementById("tvBrowseTitle").textContent = title;
+        tvBrowseItems.forEach(item => tvBrowseGrid.appendChild(createCard(item, loadProgressForItem(item))));
       }
 
       function renderSearchResults(items, query) {
+        searchMainTitle.textContent = `Results for "${query}"`;
         searchMoviesRow.innerHTML = "";
         searchTvRow.innerHTML = "";
-
-        searchMainTitle.textContent = `Results for "${query}"`;
-        searchMoviesRowTitle.textContent = "Movies";
-        searchTvRowTitle.textContent = "Series";
-
-        const movies = items.filter((i) => i.type === "movie");
-        const tvs = items.filter((i) => i.type === "tv");
-
-        movies.forEach((item) => {
-          const prog = loadProgressForItem(item);
-          const card = createCard(item, prog);
-          searchMoviesRow.appendChild(card);
-        });
-
-        tvs.forEach((item) => {
-          const prog = loadProgressForItem(item);
-          const card = createCard(item, prog);
-          searchTvRow.appendChild(card);
-        });
+        items.filter(i => i.type === "movie").forEach(item => searchMoviesRow.appendChild(createCard(item, loadProgressForItem(item))));
+        items.filter(i => i.type === "tv").forEach(item => searchTvRow.appendChild(createCard(item, loadProgressForItem(item))));
       }
-
-      function renderMovieGenresFilter() {
-        movieGenresBar.innerHTML = "";
-        if (!MOVIE_GENRES.length) return;
-
-        const allChip = document.createElement("div");
-        allChip.className =
-          "genre-chip" + (moviesBrowseCurrentGenre ? "" : " active");
-        allChip.textContent = "All";
-        allChip.addEventListener("click", () => {
-          moviesBrowseCurrentGenre = null;
-          Array.from(movieGenresBar.children).forEach((c) =>
-            c.classList.remove("active")
-          );
-          allChip.classList.add("active");
-          loadMoviesBrowse(null, true);
-        });
-        movieGenresBar.appendChild(allChip);
-
-        MOVIE_GENRES.forEach((g) => {
-          const chip = document.createElement("div");
-          chip.className =
-            "genre-chip" +
-            (moviesBrowseCurrentGenre === g.id ? " active" : "");
-          chip.textContent = g.name;
-          chip.dataset.genreId = String(g.id);
-          chip.addEventListener("click", () => {
-            moviesBrowseCurrentGenre = g.id;
-            Array.from(movieGenresBar.children).forEach((c) =>
-              c.classList.remove("active")
-            );
-            chip.classList.add("active");
-            loadMoviesBrowse(g.id, true);
-          });
-          movieGenresBar.appendChild(chip);
-        });
-      }
-
-      function renderTvGenresFilter() {
-        tvGenresBar.innerHTML = "";
-        if (!TV_GENRES.length) return;
-
-        const allChip = document.createElement("div");
-        allChip.className =
-          "genre-chip" + (tvBrowseCurrentGenre ? "" : " active");
-        allChip.textContent = "All";
-        allChip.addEventListener("click", () => {
-          tvBrowseCurrentGenre = null;
-          Array.from(tvGenresBar.children).forEach((c) =>
-            c.classList.remove("active")
-          );
-          allChip.classList.add("active");
-          loadTvBrowse(null, true);
-        });
-        tvGenresBar.appendChild(allChip);
-
-        TV_GENRES.forEach((g) => {
-          const chip = document.createElement("div");
-          chip.className =
-            "genre-chip" +
-            (tvBrowseCurrentGenre === g.id ? " active" : "");
-          chip.textContent = g.name;
-          chip.dataset.genreId = String(g.id);
-          chip.addEventListener("click", () => {
-            tvBrowseCurrentGenre = g.id;
-            Array.from(tvGenresBar.children).forEach((c) =>
-              c.classList.remove("active")
-            );
-            chip.classList.add("active");
-            loadTvBrowse(g.id, true);
-          });
-          tvGenresBar.appendChild(chip);
-        });
-      }
-
-      // 8. Hero slider
 
       function setHeroIndex(index) {
         if (!heroItems.length) return;
         heroIndex = (index + heroItems.length) % heroItems.length;
         const item = heroItems[heroIndex];
         homeHeroTitle.textContent = item.title;
-        homeHeroMeta.textContent =
-          (item.type === "movie" ? "Movie" : "Series") +
-          (item.year ? " • " + item.year : "");
-        homeHeroDescription.textContent =
-          item.description || "No description available.";
-        if (item.backdrop) {
-          homeHeroBg.style.backgroundImage = `url("${item.backdrop}")`;
-        } else if (item.poster) {
-          homeHeroBg.style.backgroundImage = `url("${item.poster}")`;
-        } else {
-          homeHeroBg.style.backgroundImage =
-            "linear-gradient(135deg, #222 0%, #333 50%, #111 100%)";
-        }
+        homeHeroMeta.textContent = (item.type === "movie" ? "Movie" : "Series") + (item.year ? " • " + item.year : "");
+        homeHeroDescription.textContent = item.description || "No description available.";
+        homeHeroBg.style.backgroundImage = item.backdrop ? `url("${item.backdrop}")` : (item.poster ? `url("${item.poster}")` : "linear-gradient(135deg, #222 0%, #333 50%, #111 100%)");
         homeHeroDots.innerHTML = "";
         heroItems.forEach((_, idx) => {
           const dot = document.createElement("div");
-          dot.className =
-            "hero-dot" + (idx === heroIndex ? " active" : "");
-          dot.addEventListener("click", () => {
-            setHeroIndex(idx);
-            restartHeroTimer();
-          });
+          dot.className = "hero-dot" + (idx === heroIndex ? " active" : "");
+          dot.addEventListener("click", () => { setHeroIndex(idx); restartHeroTimer(); });
           homeHeroDots.appendChild(dot);
         });
-        homeHeroPlayBtn.onclick = () => {
-          loadItem(item, true);
-        };
-        homeHeroInfoBtn.onclick = () => {
-          loadItem(item, false);
-        };
+        homeHeroPlayBtn.onclick = () => loadItem(item, true);
+        homeHeroInfoBtn.onclick = () => loadItem(item, false);
       }
 
-      function renderHomeHero() {
-        if (!heroItems.length) return;
-        setHeroIndex(0);
-        restartHeroTimer();
-      }
+      function renderHomeHero() { if (heroItems.length) { setHeroIndex(0); restartHeroTimer(); } }
+      function restartHeroTimer() { if (heroTimer) clearInterval(heroTimer); heroTimer = setInterval(() => setHeroIndex(heroIndex + 1), 8000); }
 
-      function restartHeroTimer() {
-        if (heroTimer) clearInterval(heroTimer);
-        heroTimer = setInterval(() => {
-          setHeroIndex(heroIndex + 1);
-        }, 8000);
-      }
-
-      // 9. Vidking player events
-
+      // Event handlers
       window.addEventListener("message", function (event) {
         let payload = event.data;
-        try {
-          if (typeof payload === "string") {
-            payload = JSON.parse(payload);
-          }
-        } catch (e) {
-          return;
-        }
+        try { if (typeof payload === "string") payload = JSON.parse(payload); } catch (e) { return; }
         if (!payload || payload.type !== "PLAYER_EVENT") return;
         const data = payload.data || {};
         if (!data.id) return;
-
-        // Save only to localStorage on each event
         saveProgressLocal(data);
-
         if (currentItem && String(data.id) === String(currentItem.tmdbId)) {
           if (data.event === "play") detailStatus.textContent = "Playing";
           if (data.event === "pause") detailStatus.textContent = "Paused";
           if (data.event === "ended") detailStatus.textContent = "Finished";
-          if (data.event === "seeked") detailStatus.textContent = "Seeking";
-          if (data.event === "timeupdate")
-            detailStatus.textContent = "Playing";
           if (data.currentTime != null && data.duration != null) {
-            const pct =
-              typeof data.progress === "number"
-                ? data.progress.toFixed(1)
-                : "0.0";
-            detailProgressText.textContent =
-              `${pct}% watched • ${formatTime(data.currentTime)} / ${formatTime(
-                data.duration
-              )}`;
+            detailProgressText.textContent = `${(data.progress || 0).toFixed(1)}% watched • ${formatTime(data.currentTime)} / ${formatTime(data.duration)}`;
           }
         }
-
-        // If the video fully finished, flush that session now too
-        if (data.event === "ended") {
-          flushCurrentPlaybackToBackend();
-        }
-
-        renderHomeContinueAndRecent();
-        renderHomeRecommendations();
+        if (data.event === "ended") flushCurrentPlaybackToBackend();
+        renderHomeRows();
       });
-
-      // 10. Search handling
 
       let searchTimeout = null;
       searchInput.addEventListener("input", () => {
         const query = searchInput.value.trim();
         if (searchTimeout) clearTimeout(searchTimeout);
-        if (!query) {
-          showView("home");
+        if (!query) { showView("home"); renderHomeRows(); return; }
+        searchTimeout = setTimeout(() => { showView("search"); performTmdbSearch(query); }, 400);
+      });
+
+      becauseSelector.addEventListener("change", (e) => {
+        const index = parseInt(e.target.value);
+        if (!isNaN(index) && userTasteProfile.recentlyWatched && userTasteProfile.recentlyWatched[index]) {
+          currentBecauseSeed = userTasteProfile.recentlyWatched[index];
           renderHomeRows();
-          return;
-        }
-        searchTimeout = setTimeout(() => {
-          showView("search");
-          performTmdbSearch(query);
-        }, 400);
-      });
-
-      // 11. Events wire up
-
-      homeLogo.addEventListener("click", () => {
-        searchInput.value = "";
-        showView("home");
-        renderHomeRows();
-      });
-
-      navHome.addEventListener("click", () => {
-        searchInput.value = "";
-        showView("home");
-        renderHomeRows();
-      });
-
-      navMovies.addEventListener("click", () => {
-        searchInput.value = "";
-        showView("movies");
-        if (!moviesBrowseItems.length && currentProfile) {
-          loadMoviesBrowse(null, true);
         }
       });
 
-      navTv.addEventListener("click", () => {
-        searchInput.value = "";
-        showView("tv");
-        if (!tvBrowseItems.length && currentProfile) {
-          loadTvBrowse(null, true);
-        }
+      applyMovieFilters.addEventListener("click", () => {
+        movieFilters.genre = movieGenreFilter.value ? parseInt(movieGenreFilter.value) : null;
+        movieFilters.yearFrom = movieYearFrom.value ? parseInt(movieYearFrom.value) : null;
+        movieFilters.yearTo = movieYearTo.value ? parseInt(movieYearTo.value) : null;
+        movieFilters.sortBy = movieSortBy.value;
+        loadMoviesWithFilters(true);
       });
 
-      moviesLoadMoreBtn.addEventListener("click", () => {
-        loadMoviesBrowse(moviesBrowseCurrentGenre, false);
+      resetMovieFilters.addEventListener("click", () => {
+        movieGenreFilter.value = "";
+        movieYearFrom.value = "";
+        movieYearTo.value = "";
+        movieSortBy.value = "popularity.desc";
+        movieFilters = { genre: null, yearFrom: null, yearTo: null, sortBy: "popularity.desc" };
+        loadMoviesWithFilters(true);
       });
 
-      tvLoadMoreBtn.addEventListener("click", () => {
-        loadTvBrowse(tvBrowseCurrentGenre, false);
+      applyTvFilters.addEventListener("click", () => {
+        tvFilters.genre = tvGenreFilter.value ? parseInt(tvGenreFilter.value) : null;
+        tvFilters.yearFrom = tvYearFrom.value ? parseInt(tvYearFrom.value) : null;
+        tvFilters.yearTo = tvYearTo.value ? parseInt(tvYearTo.value) : null;
+        tvFilters.sortBy = tvSortBy.value;
+        loadTvWithFilters(true);
       });
 
-      profileButton.addEventListener("click", () => {
-        showView("profiles");
+      resetTvFilters.addEventListener("click", () => {
+        tvGenreFilter.value = "";
+        tvYearFrom.value = "";
+        tvYearTo.value = "";
+        tvSortBy.value = "popularity.desc";
+        tvFilters = { genre: null, yearFrom: null, yearTo: null, sortBy: "popularity.desc" };
+        loadTvWithFilters(true);
       });
 
+      homeLogo.addEventListener("click", () => { searchInput.value = ""; showView("home"); renderHomeRows(); });
+      navHome.addEventListener("click", () => { searchInput.value = ""; showView("home"); renderHomeRows(); });
+      navMovies.addEventListener("click", () => { searchInput.value = ""; showView("movies"); if (!moviesBrowseItems.length && currentProfile) loadMoviesWithFilters(true); });
+      navTv.addEventListener("click", () => { searchInput.value = ""; showView("tv"); if (!tvBrowseItems.length && currentProfile) loadTvWithFilters(true); });
+      moviesLoadMoreBtn.addEventListener("click", () => loadMoviesWithFilters(false));
+      tvLoadMoreBtn.addEventListener("click", () => loadTvWithFilters(false));
+      profileButton.addEventListener("click", () => showView("profiles"));
       addProfileBtn.addEventListener("click", () => {
         const name = prompt("Profile name");
         if (!name) return;
         const trimmed = name.trim();
         if (!trimmed) return;
-        if (profiles.find((p) => p.name === trimmed)) {
-          alert("Profile with that name already exists");
-          return;
-        }
+        if (profiles.find((p) => p.name === trimmed)) { alert("Profile with that name already exists"); return; }
         profiles.push({ name: trimmed });
         saveProfilesToStorage();
         renderProfiles();
       });
-
-      // On tab close or refresh, try to flush current playback once
-      window.addEventListener("beforeunload", () => {
-        // Fire and forget, browser may or may not wait
-        flushCurrentPlaybackToBackend();
-      });
-
-      // 12. Init
+      window.addEventListener("beforeunload", () => flushCurrentPlaybackToBackend());
 
       async function init() {
         const localProfiles = loadProfilesFromStorage();
-        const storedProfileName =
-          localStorage.getItem(CURRENT_PROFILE_KEY) || null;
-
+        const storedProfileName = localStorage.getItem(CURRENT_PROFILE_KEY) || null;
         const backendProfiles = await loadProfilesFromBackend();
 
         let merged = [];
         const seen = new Set();
-
-        function addList(list) {
-          (list || []).forEach((p) => {
-            const name = (p && p.name ? String(p.name) : "").trim();
-            if (!name || seen.has(name)) return;
-            seen.add(name);
-            merged.push({ name });
-          });
-        }
-
-        if (backendProfiles.length) {
-          addList(backendProfiles);
-          addList(localProfiles);
-        } else if (localProfiles.length) {
-          addList(localProfiles);
-        } else {
-          merged = [{ name: "You" }, { name: "Guest" }];
-        }
+        function addList(list) { (list || []).forEach((p) => { const name = (p && p.name ? String(p.name) : "").trim(); if (!name || seen.has(name)) return; seen.add(name); merged.push({ name }); }); }
+        
+        if (backendProfiles.length) { addList(backendProfiles); addList(localProfiles); }
+        else if (localProfiles.length) addList(localProfiles);
+        else merged = [{ name: "You" }, { name: "Guest" }];
 
         profiles = merged;
         saveProfilesToStorage();
         renderProfiles();
 
-        if (storedProfileName && profiles.find((p) => p.name === storedProfileName)) {
-          currentProfile = storedProfileName;
-        } else if (profiles.length) {
-          currentProfile = profiles[0].name;
-          localStorage.setItem(CURRENT_PROFILE_KEY, currentProfile);
-        }
+        if (storedProfileName && profiles.find((p) => p.name === storedProfileName)) currentProfile = storedProfileName;
+        else if (profiles.length) { currentProfile = profiles[0].name; localStorage.setItem(CURRENT_PROFILE_KEY, currentProfile); }
 
         updateProfileHeader();
-
-        await Promise.all([
-          fetchTrending(),
-          fetchMovieGenres(),
-          fetchTvGenres()
-        ]);
+        await Promise.all([fetchTrending(), fetchMovieGenres(), fetchTvGenres()]);
 
         if (currentProfile) {
           await syncProgressFromBackendToLocal(currentProfile);
+          loadUserTasteProfile();
           renderHomeRows();
           showView("home");
-        } else {
-          showView("profiles");
-        }
+        } else showView("profiles");
       }
 
       init();
