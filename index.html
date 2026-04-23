@@ -2,590 +2,138 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>MyFlix - Personal Streaming Dashboard</title>
+    <title>MyFlix - Smart Recommendations</title>
     <style>
-      * {
-        box-sizing: border-box;
-      }
+      * { box-sizing: border-box; }
+      body { margin: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background-color: #000; color: #fff; }
+      a { color: inherit; text-decoration: none; }
+      header { display: flex; align-items: center; padding: 12px 32px; background: rgba(0,0,0,0.9); position: sticky; top: 0; z-index: 20; flex-wrap: wrap; gap: 10px; }
+      .logo { font-size: 24px; font-weight: 800; color: #e50914; cursor: pointer; }
+      .nav-links { display: flex; gap: 16px; margin-left: 32px; }
+      .nav-link { font-size: 14px; opacity: 0.8; cursor: pointer; }
+      .nav-link.active { font-weight: 600; opacity: 1; }
+      .nav-link:hover { opacity: 1; }
+      .search-bar { margin-left: auto; padding: 6px 10px; border-radius: 4px; border: none; outline: none; font-size: 14px; background: rgba(255,255,255,0.1); color: white; min-width: 200px; }
+      .search-bar::placeholder { color: rgba(255,255,255,0.6); }
+      .profile-button { margin-left: 16px; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+      .profile-avatar { width: 30px; height: 30px; border-radius: 999px; background: #e50914; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; }
+      .profile-name { font-size: 13px; opacity: 0.85; }
+      main { padding: 0 32px 40px; background: #000; min-height: calc(100vh - 60px); }
+      .view { display: none; background: #000; }
+      .view.active { display: block; }
 
-      body {
-        margin: 0;
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-          sans-serif;
-        background-color: #000;
-        color: #fff;
-      }
+      /* Loading skeleton */
+      .skeleton { background: linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%); background-size: 200% 100%; animation: shimmer 1.2s infinite; border-radius: 4px; }
+      @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+      .skeleton-card { min-width: 150px; max-width: 150px; height: 230px; border-radius: 6px; flex-shrink: 0; }
+      .skeleton-hero { height: 700px; border-radius: 0; }
 
-      a {
-        color: inherit;
-        text-decoration: none;
-      }
-
-      header {
-        display: flex;
-        align-items: center;
-        padding: 12px 32px;
-        background: rgba(0, 0, 0, 0.9);
-        position: sticky;
-        top: 0;
-        z-index: 20;
-      }
-
-      .logo {
-        font-size: 24px;
-        font-weight: 800;
-        color: #e50914;
-        cursor: pointer;
-      }
-
-      .nav-links {
-        display: flex;
-        gap: 16px;
-        margin-left: 32px;
-      }
-
-      .nav-link {
-        font-size: 14px;
-        opacity: 0.8;
-        cursor: pointer;
-      }
-
-      .nav-link.active {
-        font-weight: 600;
-        opacity: 1;
-      }
-
-      .nav-link:hover {
-        opacity: 1;
-      }
-
-      .search-bar {
-        margin-left: auto;
-        padding: 6px 10px;
-        border-radius: 4px;
-        border: none;
-        outline: none;
-        font-size: 14px;
-        background: rgba(255, 255, 255, 0.1);
-        color: white;
-      }
-
-      .search-bar::placeholder {
-        color: rgba(255, 255, 255, 0.6);
-      }
-
-      .profile-button {
-        margin-left: 16px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        cursor: pointer;
-      }
-
-      .profile-avatar {
-        width: 30px;
-        height: 30px;
-        border-radius: 999px;
-        background: #e50914;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 14px;
-        font-weight: 700;
-      }
-
-      .profile-name {
-        font-size: 13px;
-        opacity: 0.85;
-      }
-
-      main {
-        padding: 0 32px 40px;
-        background: #000;
-        min-height: calc(100vh - 60px);
-      }
-
-      .view {
-        display: none;
-        background: #000;
-      }
-
-      .view.active {
-        display: block;
-      }
+      /* Filter Panel */
+      .filter-panel { background: rgba(30,30,30,0.95); border-radius: 8px; padding: 16px 20px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; border: 1px solid rgba(255,255,255,0.1); }
+      .filter-group { display: flex; flex-direction: column; gap: 6px; }
+      .filter-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: rgba(255,255,255,0.7); }
+      .filter-select, .filter-input { background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 8px 12px; border-radius: 6px; font-size: 14px; cursor: pointer; }
+      .filter-select:hover, .filter-input:hover { border-color: #e50914; }
+      .year-range { display: flex; gap: 8px; align-items: center; }
+      .year-input { width: 80px; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 8px; border-radius: 6px; text-align: center; }
+      .filter-actions { display: flex; gap: 8px; margin-left: auto; }
+      .filter-btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; font-weight: 500; }
+      .filter-btn-primary { background: #e50914; color: white; }
+      .filter-btn-secondary { background: rgba(255,255,255,0.2); color: white; }
+      .filter-btn-primary:hover { background: #f40612; }
+      .filter-btn-secondary:hover { background: rgba(255,255,255,0.3); }
 
       /* Home hero */
-
-      .home-hero {
-        position: relative;
-        margin: 0 -32px 24px;
-        height: 700px;
-        overflow: hidden;
-      }
-
-      .home-hero-bg {
-        position: absolute;
-        inset: 0;
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-        filter: brightness(1);
-        transform: scale(1.03);
-      }
-
-      .home-hero-overlay {
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(
-          to top,
-          rgba(0, 0, 0, 0.7),
-          rgba(0, 0, 0, 0.25),
-          rgba(0, 0, 0, 0.3)
-        );
-      }
-
-      .home-hero-content {
-        position: relative;
-        z-index: 2;
-        padding: 100px 64px 40px;
-        max-width: 600px;
-      }
-
-      .home-hero-title {
-        font-size: 32px;
-        font-weight: 800;
-        margin-bottom: 8px;
-      }
-
-      .home-hero-meta {
-        font-size: 14px;
-        opacity: 0.85;
-        margin-bottom: 10px;
-      }
-
-      .home-hero-description {
-        font-size: 14px;
-        opacity: 0.9;
-        max-height: 70px;
-        overflow: hidden;
-      }
-
-      .home-hero-actions {
-        display: flex;
-        gap: 8px;
-        margin-top: 16px;
-      }
-
-      .btn {
-        border-radius: 4px;
-        padding: 8px 16px;
-        border: none;
-        font-size: 14px;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-      }
-
-      .btn-primary {
-        background: #fff;
-        color: #000;
-        font-weight: 600;
-      }
-
-      .btn-secondary {
-        background: rgba(109, 109, 110, 0.7);
-        color: #fff;
-        font-weight: 500;
-      }
-
-      .btn-small {
-        padding: 6px 12px;
-        font-size: 13px;
-      }
-
-      .home-hero-indicators {
-        position: absolute;
-        bottom: 18px;
-        right: 40px;
-        display: flex;
-        gap: 6px;
-      }
-
-      .hero-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.4);
-        cursor: pointer;
-      }
-
-      .hero-dot.active {
-        background: #fff;
-      }
+      .home-hero { position: relative; margin: 0 -32px 24px; height: 700px; overflow: hidden; }
+      .home-hero-bg { position: absolute; inset: 0; background-size: cover; background-position: center; background-repeat: no-repeat; transform: scale(1.03); }
+      .home-hero-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.7), rgba(0,0,0,0.25), rgba(0,0,0,0.3)); }
+      .home-hero-content { position: relative; z-index: 2; padding: 100px 64px 40px; max-width: 600px; }
+      .home-hero-title { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+      .home-hero-meta { font-size: 14px; opacity: 0.85; margin-bottom: 10px; }
+      .home-hero-description { font-size: 14px; opacity: 0.9; max-height: 70px; overflow: hidden; }
+      .home-hero-actions { display: flex; gap: 8px; margin-top: 16px; }
+      .btn { border-radius: 4px; padding: 8px 16px; border: none; font-size: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+      .btn-primary { background: #fff; color: #000; font-weight: 600; }
+      .btn-secondary { background: rgba(109,109,110,0.7); color: #fff; font-weight: 500; }
+      .btn-small { padding: 6px 12px; font-size: 13px; }
+      .home-hero-indicators { position: absolute; bottom: 18px; right: 40px; display: flex; gap: 6px; }
+      .hero-dot { width: 8px; height: 8px; border-radius: 999px; background: rgba(255,255,255,0.4); cursor: pointer; }
+      .hero-dot.active { background: #fff; }
 
       /* Rows and cards */
-
-      .rows-section {
-        margin-top: 16px;
-        background: #000;
-      }
-
-      .row {
-        margin-bottom: 26px;
-      }
-
-      .row-title {
-        font-size: 18px;
-        font-weight: 600;
-        margin-bottom: 8px;
-      }
-
-      .row-scroll {
-        display: flex;
-        gap: 10px;
-        overflow-x: auto;
-        padding-bottom: 6px;
-      }
-
-      .card {
-        min-width: 150px;
-        max-width: 150px;
-        background: #141414;
-        border-radius: 6px;
-        overflow: hidden;
-        cursor: pointer;
-        flex-shrink: 0;
-        transition: transform 0.15s ease, box-shadow 0.15s ease,
-          background-color 0.15s ease;
-        position: relative;
-      }
-
-      .card:hover {
-        transform: translateY(-3px) scale(1.03);
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.6);
-        background-color: #1f1f1f;
-      }
-
-      .card-poster {
-        width: 100%;
-        height: 210px;
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-      }
-
-      .card-body {
-        padding: 6px 8px 8px;
-      }
-
-      .card-title {
-        font-size: 13px;
-        font-weight: 600;
-        margin-bottom: 2px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      .card-meta {
-        font-size: 11px;
-        opacity: 0.75;
-      }
-
-      .chip {
-        position: absolute;
-        top: 6px;
-        left: 6px;
-        font-size: 10px;
-        padding: 2px 6px;
-        border-radius: 999px;
-        background-color: rgba(0, 0, 0, 0.7);
-        border: 1px solid rgba(255, 255, 255, 0.5);
-      }
-
-      .progress-bar {
-        position: absolute;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        height: 3px;
-        background: rgba(255, 255, 255, 0.18);
-      }
-
-      .progress-inner {
-        height: 100%;
-        background: #e50914;
-      }
-
-      .small-muted {
-        font-size: 11px;
-        opacity: 0.7;
-      }
+      .rows-section { margin-top: 16px; background: #000; }
+      .row { margin-bottom: 26px; }
+      .row-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+      .row-title { font-size: 18px; font-weight: 600; }
+      .row-selector { background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; cursor: pointer; max-width: 300px; }
+      .row-selector:hover { border-color: #e50914; }
+      .row-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px; }
+      .card { min-width: 150px; max-width: 150px; background: #141414; border-radius: 6px; overflow: hidden; cursor: pointer; flex-shrink: 0; transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease; position: relative; }
+      .card:hover { transform: translateY(-3px) scale(1.03); box-shadow: 0 10px 20px rgba(0,0,0,0.6); background-color: #1f1f1f; }
+      .card-poster { width: 100%; height: 210px; background-size: cover; background-position: center; background-repeat: no-repeat; }
+      .card-body { padding: 6px 8px 8px; }
+      .card-title { font-size: 13px; font-weight: 600; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .card-meta { font-size: 11px; opacity: 0.75; }
+      .chip { position: absolute; top: 6px; left: 6px; font-size: 10px; padding: 2px 6px; border-radius: 999px; background-color: rgba(0,0,0,0.7); border: 1px solid rgba(255,255,255,0.5); }
+      .progress-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(255,255,255,0.18); }
+      .progress-inner { height: 100%; background: #e50914; }
+      .recommendation-badge { position: absolute; bottom: 6px; right: 6px; background: rgba(0,0,0,0.85); padding: 2px 6px; border-radius: 4px; font-size: 9px; color: #46d369; font-weight: bold; z-index: 2; max-width: 90%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .small-muted { font-size: 11px; opacity: 0.7; }
 
       /* Movies and shows browse */
-
-      #moviesView,
-      #tvView {
-        padding-top: 10px;
-        background: #000;
-      }
-
-      .browse-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 12px;
-      }
-
-      .browse-title {
-        font-size: 22px;
-        font-weight: 700;
-      }
-
-      .genres-bar {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-bottom: 12px;
-      }
-
-      .genre-chip {
-        font-size: 12px;
-        padding: 4px 10px;
-        border-radius: 999px;
-        border: 1px solid rgba(255, 255, 255, 0.26);
-        cursor: pointer;
-        opacity: 0.8;
-        background: rgba(255, 255, 255, 0.1);
-      }
-
-      .genre-chip.active {
-        background: #e50914;
-        border-color: #e50914;
-        opacity: 1;
-      }
-
-      .movies-grid,
-      .tv-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-        gap: 10px;
-      }
-
-      .browse-footer {
-        margin-top: 16px;
-        display: flex;
-        justify-content: center;
-      }
+      #moviesView, #tvView { padding-top: 10px; background: #000; }
+      .browse-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+      .browse-title { font-size: 22px; font-weight: 700; }
+      .genres-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+      .genre-chip { font-size: 12px; padding: 4px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.26); cursor: pointer; opacity: 0.8; background: rgba(255,255,255,0.1); }
+      .genre-chip.active { background: #e50914; border-color: #e50914; opacity: 1; }
+      .movies-grid, .tv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+      .browse-footer { margin-top: 16px; display: flex; justify-content: center; }
 
       /* Search view */
-
-      #searchView {
-        padding-top: 10px;
-        background: #000;
-      }
+      #searchView { padding-top: 10px; background: #000; }
 
       /* Detail view */
-
-      #detailView {
-        padding-top: 10px;
-        background: #000;
-      }
-
-      .detail-layout {
-        display: flex;
-        flex-direction: column;
-      }
-
-      .detail-top {
-        margin-bottom: 16px;
-      }
-
-      .detail-title {
-        font-size: 26px;
-        font-weight: 700;
-      }
-
-      .detail-meta {
-        font-size: 14px;
-        opacity: 0.8;
-        margin-top: 4px;
-        margin-bottom: 8px;
-      }
-
-      .detail-description {
-        font-size: 14px;
-        opacity: 0.9;
-        max-width: 700px;
-      }
-
-      .detail-badges {
-        margin-top: 6px;
-        display: flex;
-        gap: 6px;
-        align-items: center;
-      }
-
-      .pill {
-        font-size: 11px;
-        border-radius: 999px;
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        padding: 2px 8px;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        background: rgba(255, 255, 255, 0.1);
-      }
-
-      .pill-dot {
-        width: 6px;
-        height: 6px;
-        border-radius: 999px;
-        background-color: #46d369;
-      }
-
-      .badge {
-        font-size: 11px;
-        padding: 2px 8px;
-        border-radius: 999px;
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        opacity: 0.85;
-        background: rgba(255, 255, 255, 0.1);
-      }
-
-      .player-wrapper {
-        margin-top: 12px;
-        margin-bottom: 12px;
-        border-radius: 8px;
-        overflow: hidden;
-        background: #111;
-      }
-
-      .player {
-        width: 100%;
-        height: 500px;
-        border: none;
-      }
-
-      .detail-progress-text {
-        font-size: 12px;
-        opacity: 0.8;
-      }
+      #detailView { padding-top: 10px; background: #000; }
+      .detail-layout { display: flex; flex-direction: column; }
+      .detail-top { margin-bottom: 16px; }
+      .detail-title { font-size: 26px; font-weight: 700; }
+      .detail-meta { font-size: 14px; opacity: 0.8; margin-top: 4px; margin-bottom: 8px; }
+      .detail-description { font-size: 14px; opacity: 0.9; max-width: 700px; }
+      .detail-badges { margin-top: 6px; display: flex; gap: 6px; align-items: center; }
+      .pill { font-size: 11px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.3); padding: 2px 8px; display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.1); }
+      .pill-dot { width: 6px; height: 6px; border-radius: 999px; background-color: #46d369; }
+      .badge { font-size: 11px; padding: 2px 8px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.3); opacity: 0.85; background: rgba(255,255,255,0.1); }
+      .player-wrapper { margin-top: 12px; margin-bottom: 12px; border-radius: 8px; overflow: hidden; background: #111; }
+      .player { width: 100%; height: 500px; border: none; }
+      .detail-progress-text { font-size: 12px; opacity: 0.8; }
 
       /* Profiles view */
-
-      #profilesView {
-        position: fixed;
-        inset: 0;
-        background: #000;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        z-index: 25;
-      }
-
-      #profilesView.view.active {
-        display: flex;
-      }
-
-      .profiles-title {
-        font-size: 26px;
-        font-weight: 700;
-        margin-bottom: 24px;
-      }
-
-      .profiles-grid {
-        display: flex;
-        gap: 18px;
-        flex-wrap: wrap;
-        justify-content: center;
-        margin-bottom: 24px;
-      }
-
-      .profile-card-wrapper {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 4px;
-      }
-
-      .profile-card {
-        width: 120px;
-        height: 120px;
-        border-radius: 8px;
-        background: #141414;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 16px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: transform 0.1s ease, background 0.1s ease;
-      }
-
-      .profile-card:hover {
-        transform: scale(1.05);
-        background: #e50914;
-      }
-
-      .profile-card-actions {
-        display: flex;
-        gap: 8px;
-        font-size: 11px;
-        opacity: 0.85;
-      }
-
-      .profile-card-actions button {
-        background: none;
-        border: none;
-        color: rgba(255, 255, 255, 0.8);
-        cursor: pointer;
-        padding: 0;
-      }
-
-      .profile-card-actions button:hover {
-        text-decoration: underline;
-      }
-
-      .profiles-actions {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        align-items: center;
-      }
-
-      .profiles-add {
-        font-size: 13px;
-        opacity: 0.85;
-        cursor: pointer;
-      }
+      #profilesView { position: fixed; inset: 0; background: #000; flex-direction: column; align-items: center; justify-content: center; z-index: 25; }
+      #profilesView.view.active { display: flex; }
+      .profiles-title { font-size: 26px; font-weight: 700; margin-bottom: 24px; }
+      .profiles-grid { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; margin-bottom: 24px; }
+      .profile-card-wrapper { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+      .profile-card { width: 120px; height: 120px; border-radius: 8px; background: #141414; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 600; cursor: pointer; transition: transform 0.1s ease, background 0.1s ease; }
+      .profile-card:hover { transform: scale(1.05); background: #e50914; }
+      .profile-card-actions { display: flex; gap: 8px; font-size: 11px; opacity: 0.85; }
+      .profile-card-actions button { background: none; border: none; color: rgba(255,255,255,0.8); cursor: pointer; padding: 0; }
+      .profile-card-actions button:hover { text-decoration: underline; }
+      .profiles-actions { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+      .profiles-add { font-size: 13px; opacity: 0.85; cursor: pointer; }
 
       @media (max-width: 768px) {
-        main {
-          padding: 0 12px 30px;
-        }
-
-        header {
-          padding: 10px 12px;
-        }
-
-        .home-hero {
-          margin: 0 -12px 12px;
-          height: 340px;
-        }
-
-        .home-hero-content {
-          padding: 80px 18px 24px;
-        }
-
-        .home-hero-title {
-          font-size: 22px;
-        }
-
-        .player {
-          height: 260px;
-        }
+        main { padding: 0 12px 30px; }
+        header { padding: 10px 12px; }
+        .home-hero { margin: 0 -12px 12px; height: 340px; }
+        .home-hero-content { padding: 80px 18px 24px; }
+        .home-hero-title { font-size: 22px; }
+        .player { height: 260px; }
+        .filter-panel { flex-direction: column; align-items: stretch; }
+        .filter-actions { margin-left: 0; }
+        .row-selector { max-width: 200px; font-size: 10px; }
+        .recommendation-badge { font-size: 7px; bottom: 4px; right: 4px; }
+        .skeleton-hero { height: 340px; }
       }
     </style>
   </head>
@@ -597,12 +145,7 @@
         <div id="navMovies" class="nav-link">Movies</div>
         <div id="navTv" class="nav-link">Shows</div>
       </nav>
-      <input
-        id="searchInput"
-        class="search-bar"
-        type="search"
-        placeholder="Search titles..."
-      />
+      <input id="searchInput" class="search-bar" type="search" placeholder="Search titles..." />
       <div class="profile-button" id="profileButton">
         <div class="profile-avatar" id="profileAvatar">?</div>
         <div class="profile-name" id="profileNameLabel">Profile</div>
@@ -615,33 +158,23 @@
         <div class="profiles-title">Who is watching?</div>
         <div id="profilesGrid" class="profiles-grid"></div>
         <div class="profiles-actions">
-          <div id="addProfileBtn" class="profiles-add">
-            + Add profile
-          </div>
-          <div class="small-muted">
-            Profiles are stored locally and synced to this app backend.
-          </div>
+          <div id="addProfileBtn" class="profiles-add">+ Add profile</div>
+          <div class="small-muted">Profiles and watch history are synced to the cloud.</div>
         </div>
       </section>
 
       <!-- Home view -->
       <section id="homeView" class="view active">
         <div class="home-hero" id="homeHero">
-          <div id="homeHeroBg" class="home-hero-bg"></div>
+          <div id="homeHeroBg" class="home-hero-bg skeleton skeleton-hero"></div>
           <div class="home-hero-overlay"></div>
           <div class="home-hero-content">
-            <div id="homeHeroTitle" class="home-hero-title">
-              Loading featured...
-            </div>
+            <div id="homeHeroTitle" class="home-hero-title">Loading featured...</div>
             <div id="homeHeroMeta" class="home-hero-meta"></div>
             <div id="homeHeroDescription" class="home-hero-description"></div>
             <div class="home-hero-actions">
-              <button id="homeHeroPlayBtn" class="btn btn-primary">
-                ▶ Play
-              </button>
-              <button id="homeHeroInfoBtn" class="btn btn-secondary">
-                ℹ More info
-              </button>
+              <button id="homeHeroPlayBtn" class="btn btn-primary">▶ Play</button>
+              <button id="homeHeroInfoBtn" class="btn btn-secondary">ℹ More info</button>
             </div>
           </div>
           <div id="homeHeroDots" class="home-hero-indicators"></div>
@@ -652,27 +185,35 @@
             <div class="row-title">Continue watching</div>
             <div class="row-scroll" id="homeContinueScroll"></div>
           </div>
-
-          <div class="row" id="homeRecMoviesRow" style="display: none">
-            <div class="row-title">Recommended movies for you</div>
-            <div class="row-scroll" id="homeRecMoviesScroll"></div>
+          <div class="row" id="homeTopPicksMoviesRow" style="display: none">
+            <div class="row-title">🌟 Top Picks for Movies</div>
+            <div class="row-scroll" id="homeTopPicksMoviesScroll"></div>
           </div>
-
-          <div class="row" id="homeRecTvRow" style="display: none">
-            <div class="row-title">Recommended series for you</div>
-            <div class="row-scroll" id="homeRecTvScroll"></div>
+          <div class="row" id="homeTopPicksShowsRow" style="display: none">
+            <div class="row-title">🌟 Top Picks for Shows</div>
+            <div class="row-scroll" id="homeTopPicksShowsScroll"></div>
           </div>
-
-          <div class="row">
-            <div class="row-title" id="homeMoviesRowTitle">
-              Trending movies
+          <div class="row" id="homeBecauseRow" style="display: none">
+            <div class="row-header">
+              <div class="row-title" id="homeBecauseTitle">Because you watched</div>
+              <select id="becauseSelector" class="row-selector">
+                <option value="">Loading your watch history...</option>
+              </select>
             </div>
-            <div class="row-scroll" id="homeMoviesRow"></div>
+            <div class="row-scroll" id="homeBecauseScroll"></div>
           </div>
-
+          <div class="row">
+            <div class="row-title" id="homeMoviesRowTitle">Trending movies</div>
+            <div class="row-scroll" id="homeMoviesRow">
+              <!-- skeleton cards shown while loading -->
+              <div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div>
+            </div>
+          </div>
           <div class="row">
             <div class="row-title" id="homeTvRowTitle">Trending series</div>
-            <div class="row-scroll" id="homeTvRow"></div>
+            <div class="row-scroll" id="homeTvRow">
+              <div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div>
+            </div>
           </div>
         </section>
       </section>
@@ -680,54 +221,90 @@
       <!-- Movies browse view -->
       <section id="moviesView" class="view">
         <div class="browse-header">
-          <div class="browse-title" id="moviesBrowseHeading">
-            Browse movies
+          <div class="browse-title" id="moviesBrowseHeading">Browse movies</div>
+        </div>
+        <div class="filter-panel">
+          <div class="filter-group">
+            <div class="filter-label">GENRE</div>
+            <select id="movieGenreFilter" class="filter-select"><option value="">All Genres</option></select>
+          </div>
+          <div class="filter-group">
+            <div class="filter-label">YEAR RANGE</div>
+            <div class="year-range">
+              <input type="number" id="movieYearFrom" class="year-input" placeholder="From" min="1900" max="2025">
+              <span>to</span>
+              <input type="number" id="movieYearTo" class="year-input" placeholder="To" min="1900" max="2025">
+            </div>
+          </div>
+          <div class="filter-group">
+            <div class="filter-label">SORT BY</div>
+            <select id="movieSortBy" class="filter-select">
+              <option value="popularity.desc">Most Popular</option>
+              <option value="vote_average.desc">Top Rated</option>
+              <option value="release_date.desc">Newest First</option>
+              <option value="release_date.asc">Oldest First</option>
+            </select>
+          </div>
+          <div class="filter-actions">
+            <button id="applyMovieFilters" class="filter-btn filter-btn-primary">Apply Filters</button>
+            <button id="resetMovieFilters" class="filter-btn filter-btn-secondary">Reset</button>
           </div>
         </div>
-        <div id="movieGenresBar" class="genres-bar"></div>
-        <div class="small-muted" id="moviesBrowseTitle">
-          All movies
-        </div>
+        <div class="small-muted" id="moviesBrowseTitle">All movies</div>
         <div id="moviesBrowseGrid" class="movies-grid"></div>
         <div class="browse-footer">
-          <button id="moviesLoadMoreBtn" class="btn btn-secondary btn-small">
-            Load more movies
-          </button>
+          <button id="moviesLoadMoreBtn" class="btn btn-secondary btn-small">Load more movies</button>
         </div>
       </section>
 
       <!-- Shows browse view -->
       <section id="tvView" class="view">
         <div class="browse-header">
-          <div class="browse-title" id="tvBrowseHeading">
-            Browse shows
+          <div class="browse-title" id="tvBrowseHeading">Browse shows</div>
+        </div>
+        <div class="filter-panel">
+          <div class="filter-group">
+            <div class="filter-label">GENRE</div>
+            <select id="tvGenreFilter" class="filter-select"><option value="">All Genres</option></select>
+          </div>
+          <div class="filter-group">
+            <div class="filter-label">YEAR RANGE</div>
+            <div class="year-range">
+              <input type="number" id="tvYearFrom" class="year-input" placeholder="From" min="1900" max="2025">
+              <span>to</span>
+              <input type="number" id="tvYearTo" class="year-input" placeholder="To" min="1900" max="2025">
+            </div>
+          </div>
+          <div class="filter-group">
+            <div class="filter-label">SORT BY</div>
+            <select id="tvSortBy" class="filter-select">
+              <option value="popularity.desc">Most Popular</option>
+              <option value="vote_average.desc">Top Rated</option>
+              <option value="first_air_date.desc">Newest First</option>
+              <option value="first_air_date.asc">Oldest First</option>
+            </select>
+          </div>
+          <div class="filter-actions">
+            <button id="applyTvFilters" class="filter-btn filter-btn-primary">Apply Filters</button>
+            <button id="resetTvFilters" class="filter-btn filter-btn-secondary">Reset</button>
           </div>
         </div>
-        <div id="tvGenresBar" class="genres-bar"></div>
-        <div class="small-muted" id="tvBrowseTitle">
-          All shows
-        </div>
+        <div class="small-muted" id="tvBrowseTitle">All shows</div>
         <div id="tvBrowseGrid" class="tv-grid"></div>
         <div class="browse-footer">
-          <button id="tvLoadMoreBtn" class="btn btn-secondary btn-small">
-            Load more shows
-          </button>
+          <button id="tvLoadMoreBtn" class="btn btn-secondary btn-small">Load more shows</button>
         </div>
       </section>
 
       <!-- Search view -->
       <section id="searchView" class="view">
         <div class="browse-header">
-          <div class="browse-title" id="searchMainTitle">
-            Search
-          </div>
+          <div class="browse-title" id="searchMainTitle">Search</div>
         </div>
-
         <div class="row">
           <div class="row-title" id="searchMoviesRowTitle">Movies</div>
           <div class="row-scroll" id="searchMoviesRow"></div>
         </div>
-
         <div class="row">
           <div class="row-title" id="searchTvRowTitle">Series</div>
           <div class="row-scroll" id="searchTvRow"></div>
@@ -742,92 +319,55 @@
             <div id="detailMeta" class="detail-meta"></div>
             <div id="detailDescription" class="detail-description"></div>
             <div class="detail-badges">
-              <div class="pill">
-                <span class="pill-dot"></span>
-                <span id="detailStatus">Idle</span>
-              </div>
-              <span
-                class="badge"
-                id="detailTypeBadge"
-                style="display: none"
-              ></span>
-              <span
-                class="badge"
-                id="detailSeasonBadge"
-                style="display: none"
-              ></span>
+              <div class="pill"><span class="pill-dot"></span><span id="detailStatus">Idle</span></div>
+              <span class="badge" id="detailTypeBadge" style="display: none"></span>
+              <span class="badge" id="detailSeasonBadge" style="display: none"></span>
+            </div>
+            <div style="margin-top:10px; display:flex; gap:8px; align-items:center;">
+              <button id="restartBtn" class="btn btn-secondary btn-small" style="display:none">↩ Watch from Beginning</button>
             </div>
           </div>
-
           <div class="player-wrapper">
-            <iframe
-              id="playerFrame"
-              class="player"
-              src=""
-              allowfullscreen
-              sandbox="allow-scripts allow-same-origin allow-fullscreen"
-              referrerpolicy="no-referrer"
-            ></iframe>
+            <iframe id="playerFrame" class="player" src="" allowfullscreen sandbox="allow-scripts allow-same-origin allow-fullscreen" referrerpolicy="no-referrer"></iframe>
           </div>
-
-          <div
-            id="detailProgressText"
-            class="detail-progress-text small-muted"
-          ></div>
+          <div id="detailProgressText" class="detail-progress-text small-muted"></div>
         </div>
       </section>
     </main>
 
     <script>
-      // 0. Config
-
+      // ── Config ──────────────────────────────────────────────────────────────
       const TMDB_API_KEY = "424df2aeed22eec623b187984f5f7791";
       const TMDB_BASE = "https://api.themoviedb.org/3";
       const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w1280";
-      const TMDB_POSTER_BASE =
-        "https://image.tmdb.org/t/p/w300_and_h450_bestv2";
-
-      const PLAYER_COLOR = "e50914";
+      const TMDB_POSTER_BASE = "https://image.tmdb.org/t/p/w300_and_h450_bestv2";
       const API_BASE = "https://myflix-api.henoksflix.workers.dev";
-
-      const CATALOG = { movies: [], tv: [] };
-      const ITEM_INDEX = {};
-      let MOVIE_GENRES = [];
-      const MOVIE_GENRE_MAP = {};
-      let TV_GENRES = [];
-      const TV_GENRE_MAP = {};
-
       const PROFILES_KEY = "myflix:profiles";
       const CURRENT_PROFILE_KEY = "myflix:currentProfile";
 
-      let profiles = [];
-      let currentProfile = null;
-      let currentView = "profiles";
+      // ── State ────────────────────────────────────────────────────────────────
+      const CATALOG = { movies: [], tv: [] };
+      const ITEM_INDEX = {};
+      let MOVIE_GENRES = [], TV_GENRES = [];
+      const MOVIE_GENRE_MAP = {}, TV_GENRE_MAP = {};
 
-      let moviesBrowseCurrentGenre = null;
-      let moviesBrowseItems = [];
-      let moviesBrowseNextPage = 1;
-
-      let tvBrowseCurrentGenre = null;
-      let tvBrowseItems = [];
-      let tvBrowseNextPage = 1;
-
-      let heroItems = [];
-      let heroIndex = 0;
-      let heroTimer = null;
-
-      let currentItem = null;
-      let playbackProfile = null;
-
-      // Tracking what we last flushed to backend, to avoid duplicate KV writes
-      let lastFlushedKey = null;
-      let lastFlushedTimestamp = null;
-
-      // Debounce for profiles save to backend
+      let profiles = [], currentProfile = null, currentView = "profiles";
+      let movieFilters = { genre: null, yearFrom: null, yearTo: null, sortBy: "popularity.desc" };
+      let tvFilters = { genre: null, yearFrom: null, yearTo: null, sortBy: "popularity.desc" };
+      let moviesBrowseItems = [], moviesBrowseNextPage = 1;
+      let tvBrowseItems = [], tvBrowseNextPage = 1;
+      let currentBecauseSeed = null;
+      let heroItems = [], heroIndex = 0, heroTimer = null;
+      let currentItem = null, playbackProfile = null;
+      let lastFlushedKey = null, lastFlushedTimestamp = null;
       let profilesSaveTimer = null;
+      let allWatchedItems = [];
 
-      // 1. DOM references
+      // Cache for discovered recommendation items so we don't re-fetch
+      const recCache = { movie: [], tv: [], timestamp: 0 };
+      const REC_CACHE_TTL = 10 * 60 * 1000; // 10 mins
 
+      // ── DOM refs ─────────────────────────────────────────────────────────────
       const homeLogo = document.getElementById("homeLogo");
       const navHome = document.getElementById("navHome");
       const navMovies = document.getElementById("navMovies");
@@ -836,64 +376,52 @@
       const profileButton = document.getElementById("profileButton");
       const profileAvatar = document.getElementById("profileAvatar");
       const profileNameLabel = document.getElementById("profileNameLabel");
-
       const profilesView = document.getElementById("profilesView");
       const profilesGrid = document.getElementById("profilesGrid");
       const addProfileBtn = document.getElementById("addProfileBtn");
-
       const homeView = document.getElementById("homeView");
       const moviesView = document.getElementById("moviesView");
       const tvView = document.getElementById("tvView");
       const searchView = document.getElementById("searchView");
       const detailView = document.getElementById("detailView");
-
-      // Home hero
       const homeHeroBg = document.getElementById("homeHeroBg");
       const homeHeroTitle = document.getElementById("homeHeroTitle");
       const homeHeroMeta = document.getElementById("homeHeroMeta");
-      const homeHeroDescription =
-        document.getElementById("homeHeroDescription");
+      const homeHeroDescription = document.getElementById("homeHeroDescription");
       const homeHeroPlayBtn = document.getElementById("homeHeroPlayBtn");
       const homeHeroInfoBtn = document.getElementById("homeHeroInfoBtn");
       const homeHeroDots = document.getElementById("homeHeroDots");
-
-      // Home rows
       const homeContinueRow = document.getElementById("homeContinueRow");
       const homeContinueScroll = document.getElementById("homeContinueScroll");
-      const homeRecMoviesRow = document.getElementById("homeRecMoviesRow");
-      const homeRecMoviesScroll =
-        document.getElementById("homeRecMoviesScroll");
-      const homeRecTvRow = document.getElementById("homeRecTvRow");
-      const homeRecTvScroll = document.getElementById("homeRecTvScroll");
-      const homeMoviesRowTitle = document.getElementById("homeMoviesRowTitle");
+      const homeTopPicksMoviesRow = document.getElementById("homeTopPicksMoviesRow");
+      const homeTopPicksMoviesScroll = document.getElementById("homeTopPicksMoviesScroll");
+      const homeTopPicksShowsRow = document.getElementById("homeTopPicksShowsRow");
+      const homeTopPicksShowsScroll = document.getElementById("homeTopPicksShowsScroll");
+      const homeBecauseRow = document.getElementById("homeBecauseRow");
+      const homeBecauseScroll = document.getElementById("homeBecauseScroll");
+      const homeBecauseTitle = document.getElementById("homeBecauseTitle");
+      const becauseSelector = document.getElementById("becauseSelector");
       const homeMoviesRow = document.getElementById("homeMoviesRow");
-      const homeTvRowTitle = document.getElementById("homeTvRowTitle");
       const homeTvRow = document.getElementById("homeTvRow");
-
-      // Movies browse
-      const moviesBrowseHeading =
-        document.getElementById("moviesBrowseHeading");
-      const movieGenresBar = document.getElementById("movieGenresBar");
-      const moviesBrowseTitle = document.getElementById("moviesBrowseTitle");
       const moviesBrowseGrid = document.getElementById("moviesBrowseGrid");
       const moviesLoadMoreBtn = document.getElementById("moviesLoadMoreBtn");
-
-      // Tv browse
-      const tvBrowseHeading = document.getElementById("tvBrowseHeading");
-      const tvGenresBar = document.getElementById("tvGenresBar");
-      const tvBrowseTitle = document.getElementById("tvBrowseTitle");
+      const movieGenreFilter = document.getElementById("movieGenreFilter");
+      const movieYearFrom = document.getElementById("movieYearFrom");
+      const movieYearTo = document.getElementById("movieYearTo");
+      const movieSortBy = document.getElementById("movieSortBy");
+      const applyMovieFilters = document.getElementById("applyMovieFilters");
+      const resetMovieFilters = document.getElementById("resetMovieFilters");
       const tvBrowseGrid = document.getElementById("tvBrowseGrid");
       const tvLoadMoreBtn = document.getElementById("tvLoadMoreBtn");
-
-      // Search view
-      const searchMainTitle = document.getElementById("searchMainTitle");
-      const searchMoviesRowTitle =
-        document.getElementById("searchMoviesRowTitle");
+      const tvGenreFilter = document.getElementById("tvGenreFilter");
+      const tvYearFrom = document.getElementById("tvYearFrom");
+      const tvYearTo = document.getElementById("tvYearTo");
+      const tvSortBy = document.getElementById("tvSortBy");
+      const applyTvFilters = document.getElementById("applyTvFilters");
+      const resetTvFilters = document.getElementById("resetTvFilters");
       const searchMoviesRow = document.getElementById("searchMoviesRow");
-      const searchTvRowTitle = document.getElementById("searchTvRowTitle");
       const searchTvRow = document.getElementById("searchTvRow");
-
-      // Detail view
+      const searchMainTitle = document.getElementById("searchMainTitle");
       const detailTitle = document.getElementById("detailTitle");
       const detailMeta = document.getElementById("detailMeta");
       const detailDescription = document.getElementById("detailDescription");
@@ -901,11 +429,10 @@
       const detailTypeBadge = document.getElementById("detailTypeBadge");
       const detailSeasonBadge = document.getElementById("detailSeasonBadge");
       const playerFrame = document.getElementById("playerFrame");
-      const detailProgressText =
-        document.getElementById("detailProgressText");
+      const detailProgressText = document.getElementById("detailProgressText");
+      const restartBtn = document.getElementById("restartBtn");
 
-      // 2. Helpers
-
+      // ── Helpers ──────────────────────────────────────────────────────────────
       function setNavActive(which) {
         navHome.classList.toggle("active", which === "home");
         navMovies.classList.toggle("active", which === "movies");
@@ -913,9 +440,7 @@
       }
 
       function stopPlayback() {
-        if (playerFrame && playerFrame.src) {
-          playerFrame.src = "";
-        }
+        if (playerFrame && playerFrame.src) playerFrame.src = "";
         playbackProfile = null;
       }
 
@@ -923,61 +448,30 @@
         if (!currentItem || !currentProfile) return;
         const rec = loadProgressForItem(currentItem);
         if (!rec) return;
-
         const key = `${currentProfile}:${rec.mediaType}:${rec.id}:${rec.season || 0}:${rec.episode || 0}`;
-        if (lastFlushedKey === key && lastFlushedTimestamp === rec.timestamp) {
-          return;
-        }
-
+        if (lastFlushedKey === key && lastFlushedTimestamp === rec.timestamp) return;
         lastFlushedKey = key;
         lastFlushedTimestamp = rec.timestamp;
-
-        try {
-          await saveProgressToBackend(currentProfile, rec);
-        } catch (e) {
-          console.error("flushCurrentPlaybackToBackend error", e);
-        }
+        try { await saveProgressToBackend(currentProfile, rec); } catch (e) { console.error(e); }
       }
 
       function showView(name) {
-        // Leaving the player view, flush once and stop audio
         if (currentView === "detail" && name !== "detail") {
           flushCurrentPlaybackToBackend();
           stopPlayback();
         }
-
-        document.querySelectorAll(".view").forEach((v) =>
-          v.classList.remove("active")
-        );
-
-        if (name === "home") {
-          homeView.classList.add("active");
-          setNavActive("home");
-        } else if (name === "movies") {
-          moviesView.classList.add("active");
-          setNavActive("movies");
-        } else if (name === "tv") {
-          tvView.classList.add("active");
-          setNavActive("tv");
-        } else if (name === "profiles") {
-          profilesView.classList.add("active");
-          setNavActive("");
-        } else if (name === "search") {
-          searchView.classList.add("active");
-          setNavActive("");
-        } else if (name === "detail") {
-          detailView.classList.add("active");
-          setNavActive("");
-        }
-
+        document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+        if (name === "home") { homeView.classList.add("active"); setNavActive("home"); }
+        else if (name === "movies") { moviesView.classList.add("active"); setNavActive("movies"); }
+        else if (name === "tv") { tvView.classList.add("active"); setNavActive("tv"); }
+        else if (name === "profiles") { profilesView.classList.add("active"); setNavActive(""); }
+        else if (name === "search") { searchView.classList.add("active"); setNavActive(""); }
+        else if (name === "detail") { detailView.classList.add("active"); setNavActive(""); }
         currentView = name;
       }
 
       function rememberItems(items) {
-        items.forEach((item) => {
-          const key = `${item.type}:${item.tmdbId}`;
-          ITEM_INDEX[key] = item;
-        });
+        items.forEach(item => { ITEM_INDEX[`${item.type}:${item.tmdbId}`] = item; });
       }
 
       function formatTime(sec) {
@@ -985,24 +479,13 @@
         const h = Math.floor(sec / 3600);
         const m = Math.floor((sec % 3600) / 60);
         const s = sec % 60;
-        if (h > 0) {
-          return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(
-            2,
-            "0"
-          )}`;
-        }
+        if (h > 0) return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
         return `${m}:${String(s).padStart(2, "0")}`;
       }
 
-      // 3. Profiles local storage
-
+      // ── Profiles ──────────────────────────────────────────────────────────────
       function loadProfilesFromStorage() {
-        try {
-          const raw = localStorage.getItem(PROFILES_KEY);
-          if (!raw) return [];
-          const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed)) return parsed;
-        } catch (e) {}
+        try { const raw = localStorage.getItem(PROFILES_KEY); if (!raw) return []; const p = JSON.parse(raw); if (Array.isArray(p)) return p; } catch (e) {}
         return [];
       }
 
@@ -1014,176 +497,88 @@
       function updateProfileHeader() {
         if (currentProfile) {
           profileNameLabel.textContent = currentProfile;
-          profileAvatar.textContent = currentProfile[0]
-            ? currentProfile[0].toUpperCase()
-            : "?";
-        } else {
-          profileNameLabel.textContent = "Profile";
-          profileAvatar.textContent = "?";
-        }
+          profileAvatar.textContent = currentProfile[0] ? currentProfile[0].toUpperCase() : "?";
+        } else { profileNameLabel.textContent = "Profile"; profileAvatar.textContent = "?"; }
       }
 
       function clearProfileProgress(name) {
         if (!name) return;
         const prefix = `watchProgress:${name}:`;
-        const keysToRemove = [];
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (key.startsWith(prefix)) keysToRemove.push(key);
-        }
-        keysToRemove.forEach((k) => localStorage.removeItem(k));
+        const keys = [];
+        for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith(prefix)) keys.push(k); }
+        keys.forEach(k => localStorage.removeItem(k));
       }
-
-      // 3b. Profiles backend
 
       async function loadProfilesFromBackend() {
         try {
-          console.log(
-            "[MyFlix] Fetching profiles from backend",
-            API_BASE + "/profiles/list"
-          );
           const res = await fetch(API_BASE + "/profiles/list");
-          const text = await res.text().catch(() => "");
-          console.log(
-            "[MyFlix] Backend /profiles/list raw response",
-            res.status,
-            text
-          );
           if (!res.ok) throw new Error("Bad status " + res.status);
-          const json = JSON.parse(text || "{}");
+          const json = JSON.parse(await res.text() || "{}");
           if (!json.ok || !Array.isArray(json.profiles)) return [];
-          return json.profiles
-            .map((p) => ({
-              name: (p && p.name ? String(p.name) : "").trim()
-            }))
-            .filter((p) => p.name);
-        } catch (e) {
-          console.error("Failed to load profiles from backend", e);
-          return [];
-        }
+          return json.profiles.map(p => ({ name: (p && p.name ? String(p.name) : "").trim() })).filter(p => p.name);
+        } catch (e) { console.error("loadProfilesFromBackend:", e); return []; }
       }
 
       function scheduleProfilesSaveToBackend() {
         if (!profiles || !profiles.length) return;
         if (profilesSaveTimer) clearTimeout(profilesSaveTimer);
         profilesSaveTimer = setTimeout(async () => {
-          try {
-            const payload = {
-              profiles: profiles.map((p) => ({ name: p.name }))
-            };
-            console.log(
-              "[MyFlix] Saving profiles to backend",
-              JSON.stringify(payload)
-            );
-            const res = await fetch(API_BASE + "/profiles/save", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(payload)
-            });
-            const text = await res.text().catch(() => "");
-            console.log(
-              "[MyFlix] Backend /profiles/save response",
-              res.status,
-              text
-            );
-          } catch (e) {
-            console.error("Failed to save profiles to backend", e);
-          }
+          try { await fetch(API_BASE + "/profiles/save", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ profiles: profiles.map(p => ({ name: p.name })) }) }); }
+          catch (e) { console.error("scheduleProfilesSaveToBackend:", e); }
         }, 1200);
       }
 
       function renderProfiles() {
         profilesGrid.innerHTML = "";
-
-        profiles.forEach((p) => {
+        profiles.forEach(p => {
           const wrapper = document.createElement("div");
           wrapper.className = "profile-card-wrapper";
-
           const card = document.createElement("div");
           card.className = "profile-card";
           card.textContent = p.name;
-          card.addEventListener("click", () => {
-            setCurrentProfile(p.name);
-          });
-
+          card.addEventListener("click", () => setCurrentProfile(p.name));
           const actions = document.createElement("div");
           actions.className = "profile-card-actions";
 
           const editBtn = document.createElement("button");
           editBtn.textContent = "Edit";
-          editBtn.addEventListener("click", (evt) => {
+          editBtn.addEventListener("click", evt => {
             evt.stopPropagation();
             const newName = prompt("New profile name", p.name);
             if (!newName) return;
             const trimmed = newName.trim();
             if (!trimmed) return;
-            if (profiles.find((x) => x.name === trimmed && x !== p)) {
-              alert("Profile with that name already exists");
-              return;
-            }
-
+            if (profiles.find(x => x.name === trimmed && x !== p)) { alert("Profile already exists"); return; }
             const oldName = p.name;
             p.name = trimmed;
             saveProfilesToStorage();
-
-            const oldPrefix = `watchProgress:${oldName}:`;
-            const newPrefix = `watchProgress:${trimmed}:`;
+            // rename localStorage keys
+            const oldPfx = `watchProgress:${oldName}:`, newPfx = `watchProgress:${trimmed}:`;
             const toMove = [];
-            for (let i = 0; i < localStorage.length; i++) {
-              const key = localStorage.key(i);
-              if (key.startsWith(oldPrefix)) {
-                toMove.push(key);
-              }
-            }
-            toMove.forEach((oldKey) => {
-              const val = localStorage.getItem(oldKey);
-              localStorage.removeItem(oldKey);
-              const newKey = newPrefix + oldKey.slice(oldPrefix.length);
-              localStorage.setItem(newKey, val);
-            });
-
-            if (currentProfile === oldName) {
-              currentProfile = trimmed;
-              localStorage.setItem(CURRENT_PROFILE_KEY, trimmed);
-              updateProfileHeader();
-              renderHomeRows();
-            }
-
+            for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith(oldPfx)) toMove.push(k); }
+            toMove.forEach(ok => { const v = localStorage.getItem(ok); localStorage.removeItem(ok); localStorage.setItem(newPfx + ok.slice(oldPfx.length), v); });
+            if (currentProfile === oldName) { currentProfile = trimmed; localStorage.setItem(CURRENT_PROFILE_KEY, trimmed); updateProfileHeader(); renderHomeRows(); }
             renderProfiles();
           });
 
           const deleteBtn = document.createElement("button");
           deleteBtn.textContent = "Delete";
-          deleteBtn.addEventListener("click", (evt) => {
+          deleteBtn.addEventListener("click", evt => {
             evt.stopPropagation();
-            if (
-              !confirm(
-                `Delete profile "${p.name}" and its local watch history?`
-              )
-            ) {
-              return;
-            }
+            if (!confirm(`Delete profile "${p.name}" and its local watch history?`)) return;
             clearProfileProgress(p.name);
-            profiles = profiles.filter((x) => x !== p);
-            if (profiles.length === 0) {
-              profiles = [{ name: "You" }, { name: "Guest" }];
-            }
+            profiles = profiles.filter(x => x !== p);
+            if (!profiles.length) profiles = [{ name: "You" }, { name: "Guest" }];
             saveProfilesToStorage();
-            if (currentProfile === p.name) {
-              currentProfile = null;
-              localStorage.removeItem(CURRENT_PROFILE_KEY);
-              updateProfileHeader();
-            }
+            if (currentProfile === p.name) { currentProfile = null; localStorage.removeItem(CURRENT_PROFILE_KEY); updateProfileHeader(); }
             renderProfiles();
             showView("profiles");
           });
 
           actions.appendChild(editBtn);
           actions.appendChild(deleteBtn);
-
           wrapper.appendChild(card);
           wrapper.appendChild(actions);
-
           profilesGrid.appendChild(wrapper);
         });
       }
@@ -1192,35 +587,26 @@
         currentProfile = name;
         localStorage.setItem(CURRENT_PROFILE_KEY, name);
         updateProfileHeader();
-        await syncProgressFromBackendToLocal(name);
+        // Don't await the backend sync — fire and forget so UI opens immediately
+        syncProgressFromBackendToLocal(name).then(() => renderHomeRows());
         renderHomeRows();
         showView("home");
       }
 
-      // 4. Progress local storage and backend
-
+      // ── Progress ──────────────────────────────────────────────────────────────
       function saveProgressLocal(data) {
         const profile = data.profile || playbackProfile || currentProfile;
         if (!profile) return;
-
         const type = data.mediaType || data.type || "movie";
         const id = data.id || data.tmdbId;
         const season = data.season || 0;
         const episode = data.episode || 0;
-
         const key = `watchProgress:${profile}:${type}:${id}:${season}:${episode}`;
         const record = {
-          id: String(id),
-          mediaType: type,
-          season,
-          episode,
-          currentTime: data.currentTime || 0,
-          duration: data.duration || 0,
-          progress: data.progress || 0,
-          timestamp: data.timestamp || Date.now(),
-          profile
+          id: String(id), mediaType: type, season, episode,
+          currentTime: data.currentTime || 0, duration: data.duration || 0,
+          progress: data.progress || 0, timestamp: data.timestamp || Date.now(), profile
         };
-
         localStorage.setItem(key, JSON.stringify(record));
       }
 
@@ -1231,11 +617,7 @@
         for (let i = 0; i < localStorage.length; i++) {
           const key = localStorage.key(i);
           if (!key.startsWith(prefix)) continue;
-          try {
-            const val = JSON.parse(localStorage.getItem(key));
-            if (!val) continue;
-            entries.push(val);
-          } catch (e) {}
+          try { const v = JSON.parse(localStorage.getItem(key)); if (v) entries.push(v); } catch (e) {}
         }
         entries.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
         return entries;
@@ -1248,375 +630,346 @@
         const season = item.season || 0;
         const episode = item.episode || 0;
         const prefix = `watchProgress:${currentProfile}:${type}:${id}:`;
+
+        // Collect all progress records for this title
+        const allRecs = [];
         for (let i = 0; i < localStorage.length; i++) {
           const key = localStorage.key(i);
           if (!key.startsWith(prefix)) continue;
-          try {
-            const rec = JSON.parse(localStorage.getItem(key));
-            if (!rec) continue;
-            if (
-              (rec.season || 0) === season &&
-              (rec.episode || 0) === episode
-            ) {
-              return rec;
-            }
-          } catch (e) {}
+          try { const rec = JSON.parse(localStorage.getItem(key)); if (rec) allRecs.push(rec); } catch (e) {}
         }
+        if (!allRecs.length) return null;
+
+        // Exact season+episode match first
+        const exact = allRecs.find(r => (r.season || 0) === season && (r.episode || 0) === episode);
+        if (exact) return exact;
+
+        // For TV: card defaults to S1E1 but user may have watched a different episode.
+        // Return the most recently watched episode so rewatch/resume logic fires correctly.
+        if (type === "tv") {
+          allRecs.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+          return allRecs[0];
+        }
+
         return null;
       }
 
       async function saveProgressToBackend(userId, data) {
         if (!userId) return;
         try {
-          console.log("[MyFlix] Saving progress to backend", {
-            userId,
-            id: data.id,
-            mediaType: data.mediaType || data.type,
-            season: data.season || 0,
-            episode: data.episode || 0,
-            currentTime: data.currentTime || 0,
-            duration: data.duration || 0,
-            progress: data.progress || 0,
-            timestamp: data.timestamp || Date.now()
+          await fetch(API_BASE + "/progress/save", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId, id: data.id, mediaType: data.mediaType || data.type, season: data.season || 0, episode: data.episode || 0, currentTime: data.currentTime || 0, duration: data.duration || 0, progress: data.progress || 0, timestamp: data.timestamp || Date.now() })
           });
-          const res = await fetch(API_BASE + "/progress/save", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              userId,
-              id: data.id,
-              mediaType: data.mediaType || data.type,
-              season: data.season || 0,
-              episode: data.episode || 0,
-              currentTime: data.currentTime || 0,
-              duration: data.duration || 0,
-              progress: data.progress || 0,
-              timestamp: data.timestamp || Date.now()
-            })
-          });
-          const text = await res.text().catch(() => "");
-          console.log(
-            "[MyFlix] Backend /progress/save response",
-            res.status,
-            text
-          );
-        } catch (e) {
-          console.error("saveProgressToBackend error", e);
-        }
+        } catch (e) { console.error("saveProgressToBackend:", e); }
       }
 
       async function syncProgressFromBackendToLocal(profileName) {
         if (!profileName) return [];
         try {
-          const url = `${API_BASE}/progress/list?userId=${encodeURIComponent(
-            profileName
-          )}`;
-          console.log("[MyFlix] Fetching progress list from backend", url);
+          const url = `${API_BASE}/progress/list?userId=${encodeURIComponent(profileName)}`;
           const res = await fetch(url);
-          const text = await res.text().catch(() => "");
-          console.log(
-            "[MyFlix] Backend /progress/list raw response",
-            res.status,
-            text
-          );
           if (!res.ok) throw new Error("Bad status " + res.status);
-          const json = JSON.parse(text || "{}");
-          console.log("[MyFlix] Parsed /progress/list JSON", json);
+          const json = JSON.parse(await res.text() || "{}");
           if (!json.ok) return [];
           const list = Array.isArray(json.entries) ? json.entries : [];
-          list.forEach((entry) => {
-            saveProgressLocal({ ...entry, profile: profileName });
-          });
+          list.forEach(entry => saveProgressLocal({ ...entry, profile: profileName }));
           return list;
-        } catch (err) {
-          console.error("Failed to load progress from backend", err);
-          return [];
-        }
+        } catch (err) { console.error("syncProgressFromBackendToLocal:", err); return []; }
       }
 
-      // 5. TMDB helpers
-
+      // ── TMDB helpers ──────────────────────────────────────────────────────────
       async function tmdbFetch(path, params = {}) {
         const url = new URL(TMDB_BASE + path);
         url.searchParams.set("api_key", TMDB_API_KEY);
         url.searchParams.set("language", "en-US");
-        Object.entries(params).forEach(([k, v]) =>
-          url.searchParams.set(k, v)
-        );
+        Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
         const res = await fetch(url.toString());
-        if (!res.ok) {
-          const text = await res.text().catch(() => "");
-          console.error("TMDB error", res.status, path, text);
-          throw new Error("TMDB error " + res.status);
-        }
+        if (!res.ok) throw new Error("TMDB error " + res.status);
         return res.json();
       }
 
       async function fetchTrending() {
-        try {
-          const [movieData, tvData] = await Promise.all([
-            tmdbFetch("/trending/movie/week", { include_adult: "false" }),
-            tmdbFetch("/trending/tv/week", { include_adult: "false" })
-          ]);
+        // Fetch trending in parallel (was already parallel, keeping it)
+        const [movieData, tvData] = await Promise.all([
+          tmdbFetch("/trending/movie/week", { include_adult: "false" }),
+          tmdbFetch("/trending/tv/week", { include_adult: "false" })
+        ]);
 
-          CATALOG.movies =
-            (movieData.results || []).slice(0, 40).map((r) => ({
-              id: String(r.id),
-              tmdbId: String(r.id),
-              type: "movie",
-              title: r.title || r.original_title || "Untitled",
-              year: r.release_date ? Number(r.release_date.slice(0, 4)) : "",
-              description: r.overview || "",
-              poster: r.poster_path
-                ? TMDB_POSTER_BASE + r.poster_path
-                : null,
-              backdrop: r.backdrop_path
-                ? TMDB_IMAGE_BASE + r.backdrop_path
-                : null,
-              genres: r.genre_ids || []
-            })) || [];
+        CATALOG.movies = (movieData.results || []).slice(0, 100).map(r => ({
+          id: String(r.id), tmdbId: String(r.id), type: "movie",
+          title: r.title || r.original_title || "Untitled",
+          year: r.release_date ? Number(r.release_date.slice(0, 4)) : "",
+          description: r.overview || "",
+          poster: r.poster_path ? TMDB_POSTER_BASE + r.poster_path : null,
+          backdrop: r.backdrop_path ? TMDB_IMAGE_BASE + r.backdrop_path : null,
+          genres: r.genre_ids || []
+        }));
 
-          CATALOG.tv =
-            (tvData.results || []).slice(0, 40).map((r) => ({
-              id: String(r.id),
-              tmdbId: String(r.id),
-              type: "tv",
-              title: r.name || r.original_name || "Untitled",
-              year: r.first_air_date ? Number(r.first_air_date.slice(0, 4)) : "",
-              description: r.overview || "",
-              season: 1,
-              episode: 1,
-              poster: r.poster_path
-                ? TMDB_POSTER_BASE + r.poster_path
-                : null,
-              backdrop: r.backdrop_path
-                ? TMDB_IMAGE_BASE + r.backdrop_path
-                : null,
-              genres: r.genre_ids || []
-            })) || [];
+        CATALOG.tv = (tvData.results || []).slice(0, 100).map(r => ({
+          id: String(r.id), tmdbId: String(r.id), type: "tv",
+          title: r.name || r.original_name || "Untitled",
+          year: r.first_air_date ? Number(r.first_air_date.slice(0, 4)) : "",
+          description: r.overview || "",
+          season: 1, episode: 1,
+          poster: r.poster_path ? TMDB_POSTER_BASE + r.poster_path : null,
+          backdrop: r.backdrop_path ? TMDB_IMAGE_BASE + r.backdrop_path : null,
+          genres: r.genre_ids || []
+        }));
 
-          rememberItems(CATALOG.movies);
-          rememberItems(CATALOG.tv);
-
-          heroItems = CATALOG.movies.slice(0, 8);
-        } catch (e) {
-          console.error("fetchTrending error", e);
-        }
+        rememberItems(CATALOG.movies);
+        rememberItems(CATALOG.tv);
+        heroItems = CATALOG.movies.slice(0, 8);
       }
 
       async function fetchMovieGenres() {
         try {
           const data = await tmdbFetch("/genre/movie/list");
           MOVIE_GENRES = data.genres || [];
-          MOVIE_GENRES.forEach((g) => (MOVIE_GENRE_MAP[g.id] = g.name));
-          renderMovieGenresFilter();
-        } catch (e) {
-          console.error("fetchMovieGenres error", e);
-        }
+          MOVIE_GENRES.forEach(g => (MOVIE_GENRE_MAP[g.id] = g.name));
+          populateGenreFilter(movieGenreFilter, MOVIE_GENRES);
+        } catch (e) { console.error("fetchMovieGenres:", e); }
       }
 
       async function fetchTvGenres() {
         try {
           const data = await tmdbFetch("/genre/tv/list");
           TV_GENRES = data.genres || [];
-          TV_GENRES.forEach((g) => (TV_GENRE_MAP[g.id] = g.name));
-          renderTvGenresFilter();
-        } catch (e) {
-          console.error("fetchTvGenres error", e);
-        }
+          TV_GENRES.forEach(g => (TV_GENRE_MAP[g.id] = g.name));
+          populateGenreFilter(tvGenreFilter, TV_GENRES);
+        } catch (e) { console.error("fetchTvGenres:", e); }
       }
 
-      async function performTmdbSearch(query) {
-        try {
-          const json = await tmdbFetch("/search/multi", {
-            query,
-            include_adult: "false"
+      function populateGenreFilter(selectEl, genres) {
+        selectEl.innerHTML = '<option value="">All Genres</option>';
+        genres.forEach(g => {
+          const o = document.createElement("option");
+          o.value = g.id; o.textContent = g.name;
+          selectEl.appendChild(o);
+        });
+      }
+
+      // ── IMPROVED RECOMMENDATIONS ──────────────────────────────────────────────
+      // Build a taste profile from watch history
+      function buildTasteProfile() {
+        const progressEntries = loadAllProgressLocal();
+        const genreScores = {}, decadeScores = {};
+        let totalWeight = 0;
+
+        for (const rec of progressEntries) {
+          if (!rec.id || !rec.mediaType || rec.progress < 5) continue;
+          const item = ITEM_INDEX[`${rec.mediaType}:${String(rec.id)}`];
+          if (!item || !item.genres || !item.genres.length) continue;
+
+          let weight = rec.progress >= 95 ? 1.0 : rec.progress >= 70 ? 0.8 : rec.progress >= 40 ? 0.5 : rec.progress >= 10 ? 0.3 : 0.1;
+          if (rec.mediaType === "tv") {
+            const eps = progressEntries.filter(e => e.mediaType === "tv" && String(e.id) === String(rec.id));
+            if (eps.length > 1) weight *= Math.min(1.5, 1 + eps.length * 0.1);
+          }
+          totalWeight += weight;
+          for (const gid of item.genres) genreScores[gid] = (genreScores[gid] || 0) + weight;
+          if (item.year) { const d = Math.floor(item.year / 10) * 10; decadeScores[d] = (decadeScores[d] || 0) + weight; }
+        }
+
+        if (totalWeight > 0) {
+          for (const g in genreScores) genreScores[g] /= totalWeight;
+          for (const d in decadeScores) decadeScores[d] /= totalWeight;
+        }
+
+        return { genreScores, decadeScores, totalWatched: progressEntries.length };
+      }
+
+      // Get the top genre IDs from a taste profile
+      function getTopGenres(tasteProfile, n = 3) {
+        return Object.entries(tasteProfile.genreScores)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, n)
+          .map(([id]) => Number(id));
+      }
+
+      // Fetch a page of TMDB discover results filtered by genres
+      async function fetchDiscoverPage(type, genreIds, page = 1) {
+        const endpoint = type === "movie" ? "/discover/movie" : "/discover/tv";
+        const dateKey = type === "movie" ? "primary_release_date.lte" : "first_air_date.lte";
+        const params = {
+          sort_by: "vote_average.desc",
+          "vote_count.gte": "200",
+          [dateKey]: "2025-12-31",
+          with_genres: genreIds.join(","),
+          include_adult: "false",
+          page: String(page)
+        };
+        const data = await tmdbFetch(endpoint, params);
+        return (data.results || []).map(r => {
+          if (type === "movie") return {
+            id: String(r.id), tmdbId: String(r.id), type: "movie",
+            title: r.title || r.original_title || "Untitled",
+            year: r.release_date ? Number(r.release_date.slice(0, 4)) : "",
+            description: r.overview || "",
+            poster: r.poster_path ? TMDB_POSTER_BASE + r.poster_path : null,
+            backdrop: r.backdrop_path ? TMDB_IMAGE_BASE + r.backdrop_path : null,
+            genres: r.genre_ids || [], voteAvg: r.vote_average || 0, voteCount: r.vote_count || 0
+          };
+          return {
+            id: String(r.id), tmdbId: String(r.id), type: "tv",
+            title: r.name || r.original_name || "Untitled",
+            year: r.first_air_date ? Number(r.first_air_date.slice(0, 4)) : "",
+            description: r.overview || "",
+            season: 1, episode: 1,
+            poster: r.poster_path ? TMDB_POSTER_BASE + r.poster_path : null,
+            backdrop: r.backdrop_path ? TMDB_IMAGE_BASE + r.backdrop_path : null,
+            genres: r.genre_ids || [], voteAvg: r.vote_average || 0, voteCount: r.vote_count || 0
+          };
+        });
+      }
+
+      // Score a single item against a taste profile
+      function scoreItem(item, tasteProfile) {
+        let score = 0;
+        let reasons = [];
+        const { genreScores, decadeScores } = tasteProfile;
+
+        let genreScore = 0, genreMatches = 0;
+        for (const gid of (item.genres || [])) {
+          const aff = genreScores[gid] || 0;
+          if (aff > 0) { genreScore += aff; genreMatches++; }
+        }
+        if (genreMatches > 0) {
+          genreScore /= genreMatches;
+          score += genreScore * 0.55;
+          if (genreScore > 0.25) reasons.push("Matches your taste in genres");
+        }
+
+        if (item.year) {
+          const d = Math.floor(item.year / 10) * 10;
+          const da = decadeScores[d] || 0;
+          if (da > 0) { score += da * 0.2; if (da > 0.25) reasons.push(`From the ${d}s, your era`); }
+        }
+
+        // Quality bonus — reward well-reviewed content
+        if (item.voteAvg && item.voteCount) {
+          const qualityBonus = Math.min(0.2, ((item.voteAvg - 6) / 4) * (Math.min(item.voteCount, 5000) / 5000) * 0.2);
+          if (qualityBonus > 0) { score += qualityBonus; if (item.voteAvg >= 7.5) reasons.push(`Critically acclaimed (${item.voteAvg.toFixed(1)}★)`); }
+        }
+
+        return { score, reasons };
+      }
+
+      // Main recommendation fetcher — uses TMDB discover with user's top genres
+      async function fetchPersonalisedRecs(type, limit = 20) {
+        const tasteProfile = buildTasteProfile();
+        const topGenres = getTopGenres(tasteProfile, 3);
+
+        // No watch history yet — return top-rated popular content
+        if (!topGenres.length) {
+          const fallback = await fetchDiscoverPage(type, [], 1);
+          rememberItems(fallback);
+          return fallback.slice(0, limit);
+        }
+
+        // Check cache
+        const now = Date.now();
+        if (recCache[type].length && now - recCache.timestamp < REC_CACHE_TTL) {
+          return recCache[type].slice(0, limit);
+        }
+
+        const watchedSet = new Set();
+        for (const rec of loadAllProgressLocal()) {
+          if (rec.progress > 10) watchedSet.add(`${rec.mediaType}:${String(rec.id)}`);
+        }
+
+        // Fetch 2 pages using top genres, 1 page using all top genres combined
+        const [p1, p2, p3] = await Promise.all([
+          fetchDiscoverPage(type, topGenres.slice(0, 2), 1).catch(() => []),
+          fetchDiscoverPage(type, topGenres.slice(0, 2), 2).catch(() => []),
+          fetchDiscoverPage(type, topGenres, 1).catch(() => [])
+        ]);
+
+        const seen = new Set();
+        const combined = [...p1, ...p2, ...p3].filter(item => {
+          const key = `${item.type}:${item.tmdbId}`;
+          if (seen.has(key) || watchedSet.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+
+        rememberItems(combined);
+
+        const scored = combined.map(item => {
+          const { score, reasons } = scoreItem(item, tasteProfile);
+          return { item, score, reasons };
+        }).filter(x => x.score > 0).sort((a, b) => b.score - a.score);
+
+        const result = scored.slice(0, limit).map(s => {
+          s.item.recommendationReason = s.reasons[0] || "Recommended for you";
+          return s.item;
+        });
+
+        recCache[type] = result;
+        recCache.timestamp = now;
+        return result;
+      }
+
+      // "Because you watched" — similar content to a seed item
+      function getBecauseYouWatched(seedItem, limit = 20) {
+        if (!seedItem || !seedItem.genres || !seedItem.genres.length) return [];
+        const seedGenres = new Set(seedItem.genres);
+        const seedDecade = seedItem.year ? Math.floor(seedItem.year / 10) * 10 : null;
+        const watchedSet = new Set();
+        for (const rec of loadAllProgressLocal()) {
+          if (rec.progress > 10) watchedSet.add(`${rec.mediaType}:${String(rec.id)}`);
+        }
+
+        const candidates = [...CATALOG.movies, ...CATALOG.tv, ...recCache.movie, ...recCache.tv]
+          .filter(item => {
+            const key = `${item.type}:${item.tmdbId}`;
+            return !watchedSet.has(key);
           });
-          const results = json.results || [];
-          const items = results
-            .filter(
-              (r) => r.media_type === "movie" || r.media_type === "tv"
-            )
-            .slice(0, 40)
-            .map((r) => {
-              if (r.media_type === "movie") {
-                return {
-                  id: String(r.id),
-                  tmdbId: String(r.id),
-                  type: "movie",
-                  title: r.title || r.original_title || "Untitled",
-                  year: r.release_date
-                    ? Number(r.release_date.slice(0, 4))
-                    : "",
-                  description: r.overview || "",
-                  poster: r.poster_path
-                    ? TMDB_POSTER_BASE + r.poster_path
-                    : null,
-                  genres: r.genre_ids || []
-                };
-              } else {
-                return {
-                  id: String(r.id),
-                  tmdbId: String(r.id),
-                  type: "tv",
-                  title: r.name || r.original_name || "Untitled",
-                  year: r.first_air_date
-                    ? Number(r.first_air_date.slice(0, 4))
-                    : "",
-                  description: r.overview || "",
-                  season: 1,
-                  episode: 1,
-                  poster: r.poster_path
-                    ? TMDB_POSTER_BASE + r.poster_path
-                    : null,
-                  genres: r.genre_ids || []
-                };
-              }
-            });
-          rememberItems(items);
-          renderSearchResults(items, query);
-        } catch (e) {
-          console.error("performTmdbSearch error", e);
-        }
-      }
 
-      async function loadMoviesBrowse(genreId, reset) {
-        if (reset || genreId !== moviesBrowseCurrentGenre) {
-          moviesBrowseCurrentGenre = genreId || null;
-          moviesBrowseItems = [];
-          moviesBrowseNextPage = 1;
-        }
+        const seen = new Set();
+        const deduped = candidates.filter(item => {
+          const k = `${item.type}:${item.tmdbId}`;
+          if (seen.has(k)) return false; seen.add(k); return true;
+        });
 
-        const paramsBase = {
-          sort_by: "popularity.desc",
-          include_adult: "false"
-        };
-        if (moviesBrowseCurrentGenre) {
-          paramsBase.with_genres = String(moviesBrowseCurrentGenre);
-        }
-
-        moviesBrowseGrid.innerHTML =
-          moviesBrowseItems.length === 0
-            ? "<div class='small-muted'>Loading...</div>"
-            : moviesBrowseGrid.innerHTML;
-
-        const pages = [
-          moviesBrowseNextPage,
-          moviesBrowseNextPage + 1,
-          moviesBrowseNextPage + 2,
-          moviesBrowseNextPage + 3
-        ];
-
-        let all = [];
-        try {
-          for (const p of pages) {
-            const data = await tmdbFetch("/discover/movie", {
-              ...paramsBase,
-              page: String(p)
-            });
-            all = all.concat(data.results || []);
+        const scored = deduped.map(item => {
+          let score = 0, reasons = [];
+          const overlap = (item.genres || []).filter(g => seedGenres.has(g)).length;
+          if (overlap > 0) {
+            const strength = overlap / Math.max(seedGenres.size, 1);
+            score += strength * 0.7;
+            if (strength > 0.4) reasons.push(`${overlap} shared genre${overlap > 1 ? "s" : ""} with ${seedItem.title}`);
           }
-        } catch (e) {
-          console.error("discover movies error", e);
-        }
-
-        moviesBrowseNextPage += 4;
-
-        const newItems = all.map((r) => ({
-          id: String(r.id),
-          tmdbId: String(r.id),
-          type: "movie",
-          title: r.title || r.original_title || "Untitled",
-          year: r.release_date ? Number(r.release_date.slice(0, 4)) : "",
-          description: r.overview || "",
-          poster: r.poster_path ? TMDB_POSTER_BASE + r.poster_path : null,
-          genres: r.genre_ids || []
-        }));
-
-        moviesBrowseItems = moviesBrowseItems.concat(newItems);
-        rememberItems(newItems);
-        renderMoviesBrowseGrid();
-      }
-
-      async function loadTvBrowse(genreId, reset) {
-        if (reset || genreId !== tvBrowseCurrentGenre) {
-          tvBrowseCurrentGenre = genreId || null;
-          tvBrowseItems = [];
-          tvBrowseNextPage = 1;
-        }
-
-        const paramsBase = {
-          sort_by: "popularity.desc",
-          include_adult: "false"
-        };
-        if (tvBrowseCurrentGenre) {
-          paramsBase.with_genres = String(tvBrowseCurrentGenre);
-        }
-
-        tvBrowseGrid.innerHTML =
-          tvBrowseItems.length === 0
-            ? "<div class='small-muted'>Loading...</div>"
-            : tvBrowseGrid.innerHTML;
-
-        const pages = [
-          tvBrowseNextPage,
-          tvBrowseNextPage + 1,
-          tvBrowseNextPage + 2,
-          tvBrowseNextPage + 3
-        ];
-        let all = [];
-        try {
-          for (const p of pages) {
-            const data = await tmdbFetch("/discover/tv", {
-              ...paramsBase,
-              page: String(p)
-            });
-            all = all.concat(data.results || []);
+          if (seedDecade && item.year) {
+            const d = Math.floor(item.year / 10) * 10;
+            if (d === seedDecade) { score += 0.2; reasons.push(`Same era (${seedDecade}s)`); }
+            else if (Math.abs(item.year - (seedItem.year || 0)) < 5) { score += 0.1; reasons.push("Released around the same time"); }
           }
-        } catch (e) {
-          console.error("discover tv error", e);
-        }
+          if (item.type === seedItem.type) score += 0.1;
+          // Quality bonus
+          if (item.voteAvg && item.voteAvg > 6.5) score += Math.min(0.1, (item.voteAvg - 6.5) * 0.05);
+          return { item, score, reasons };
+        });
 
-        tvBrowseNextPage += 4;
-
-        const newItems = all.map((r) => ({
-          id: String(r.id),
-          tmdbId: String(r.id),
-          type: "tv",
-          title: r.name || r.original_name || "Untitled",
-          year: r.first_air_date ? Number(r.first_air_date.slice(0, 4)) : "",
-          description: r.overview || "",
-          season: 1,
-          episode: 1,
-          poster: r.poster_path ? TMDB_POSTER_BASE + r.poster_path : null,
-          genres: r.genre_ids || []
-        }));
-
-        tvBrowseItems = tvBrowseItems.concat(newItems);
-        rememberItems(newItems);
-        renderTvBrowseGrid();
+        return scored.filter(x => x.score > 0.2)
+          .sort((a, b) => b.score - a.score)
+          .slice(0, limit)
+          .map(s => { s.item.recommendationReason = s.reasons[0] || `Similar to ${seedItem.title}`; return s.item; });
       }
 
-      // 6. Player URL and detail load
-
-      function buildPlayerUrl(item, resumeFromSeconds) {
+      // ── Player URL ────────────────────────────────────────────────────────────
+      function buildPlayerUrl(item, startSeconds, forceFresh) {
         const base = "https://www.vidking.net/embed";
-      
-        if (item.type === "movie") {
-          return `${base}/movie/${item.tmdbId}?color=${PLAYER_COLOR}&autoPlay=true`;
-        }
-      
-        if (item.type === "tv") {
-          const season = item.season || 1;
-          const episode = item.episode || 1;
-          return `${base}/tv/${item.tmdbId}/${season}/${episode}?color=${PLAYER_COLOR}&autoPlay=true&nextEpisode=true&episodeSelector=true`;
-        }
-      
+        // progress=N tells vidking exactly where to start (overrides its own saved position).
+        // forceFresh cache-busts so vidking sees a new embed and can't fall back to stored state.
+        const progressParam = (startSeconds > 0) ? `&progress=${Math.floor(startSeconds)}` : "";
+        const bustParam = forceFresh ? `&_cb=${Date.now()}` : "";
+        if (item.type === "movie") return `${base}/movie/${item.tmdbId}?color=e50914&autoPlay=true${progressParam}${bustParam}`;
+        if (item.type === "tv") return `${base}/tv/${item.tmdbId}/${item.season || 1}/${item.episode || 1}?color=e50914&autoPlay=true&nextEpisode=true&episodeSelector=true${progressParam}${bustParam}`;
         return "";
       }
 
-
-      function loadItem(item, resume) {
+      function loadItem(item, resume, forceRestart) {
         currentItem = item;
         playbackProfile = currentProfile;
         lastFlushedKey = null;
@@ -1624,54 +977,61 @@
         showView("detail");
 
         detailTitle.textContent = item.title;
-        detailMeta.textContent =
-          (item.type === "movie" ? "Movie" : "Series") +
-          (item.year ? " • " + item.year : "");
+        detailMeta.textContent = (item.type === "movie" ? "Movie" : "Series") + (item.year ? " • " + item.year : "");
         detailDescription.textContent = item.description || "";
-
         detailTypeBadge.style.display = "inline-block";
-        detailTypeBadge.textContent =
-          item.type === "movie" ? "Movie" : "TV series";
-        if (item.type === "tv") {
+        detailTypeBadge.textContent = item.type === "movie" ? "Movie" : "TV series";
+        if (item.type === "tv") { detailSeasonBadge.style.display = "inline-block"; detailSeasonBadge.textContent = `Season ${item.season || 1}`; }
+        else detailSeasonBadge.style.display = "none";
+        detailStatus.textContent = "Loading";
+
+        const saved = loadProgressForItem(item);
+
+        // If we fell back to a different episode for this TV show, sync the item to match
+        if (saved && item.type === "tv") {
+          if (saved.season) item.season = saved.season;
+          if (saved.episode) item.episode = saved.episode;
           detailSeasonBadge.style.display = "inline-block";
           detailSeasonBadge.textContent = `Season ${item.season || 1}`;
+        }
+
+        // Show "Watch from Beginning" button whenever there's meaningful progress
+        const hasProgress = saved && saved.progress >= 5;
+        restartBtn.style.display = hasProgress ? "inline-flex" : "none";
+        restartBtn.onclick = () => loadItem(item, false, true);
+
+        let startSeconds = 0;
+        let forceFresh = false;
+
+        if (forceRestart) {
+          // User explicitly clicked "Watch from Beginning" — clear progress and hard-reset the player
+          if (saved) {
+            const key = `watchProgress:${currentProfile}:${item.type}:${item.tmdbId}:${item.season || 0}:${item.episode || 0}`;
+            localStorage.removeItem(key);
+          }
+          forceFresh = true;
+          startSeconds = 0;
+          restartBtn.style.display = "none";
+          detailProgressText.textContent = "Starting from the beginning...";
+        } else if (resume && saved && saved.currentTime && saved.progress >= 5) {
+          // Resume where they left off — pass exact seconds to vidking via progress= param
+          startSeconds = saved.currentTime;
+          detailProgressText.textContent = `Resuming at ${formatTime(startSeconds)} • ${saved.progress.toFixed(1)}% watched`;
         } else {
-          detailSeasonBadge.style.display = "none";
+          detailProgressText.textContent = "";
         }
 
-        detailStatus.textContent = "Loading";
-        detailProgressText.textContent = "";
-
-        let resumeSeconds = 0;
-        const saved = loadProgressForItem(item);
-        if (resume && saved && saved.currentTime && saved.progress < 98) {
-          resumeSeconds = saved.currentTime;
-          detailProgressText.textContent = `Resume at ${formatTime(
-            resumeSeconds
-          )} • ${saved.progress.toFixed(1)}% watched`;
-        }
-
-        const url = buildPlayerUrl(item, resumeSeconds);
-        playerFrame.src = url;
+        playerFrame.src = buildPlayerUrl(item, startSeconds, forceFresh);
       }
 
-      // 7. Cards and rows
-
+      // ── Card factory ─────────────────────────────────────────────────────────
       function createCard(item, progressRec) {
         const card = document.createElement("div");
         card.className = "card";
-        card.dataset.type = item.type;
-        card.dataset.id = item.tmdbId;
-        if (item.type === "tv") {
-          card.dataset.season = item.season || 1;
-          card.dataset.episode = item.episode || 1;
-        }
 
         const poster = document.createElement("div");
         poster.className = "card-poster";
-        poster.style.backgroundImage = item.poster
-          ? `url("${item.poster}")`
-          : 'linear-gradient(135deg, #333 0%, #555 50%, #222 100%)';
+        poster.style.backgroundImage = item.poster ? `url("${item.poster}")` : "linear-gradient(135deg, #333 0%, #555 50%, #222 100%)";
 
         const chip = document.createElement("div");
         chip.className = "chip";
@@ -1680,40 +1040,37 @@
         const body = document.createElement("div");
         body.className = "card-body";
 
-        const title = document.createElement("div");
-        title.className = "card-title";
-        title.textContent = item.title;
+        const titleEl = document.createElement("div");
+        titleEl.className = "card-title";
+        titleEl.textContent = item.title;
 
         const meta = document.createElement("div");
         meta.className = "card-meta";
         let metaText = item.year ? String(item.year) : "";
-        if (item.type === "tv") {
-          metaText += metaText ? " • " : "";
-          metaText += `S${item.season || 1}E${item.episode || 1}`;
-        }
-        if (progressRec && progressRec.progress) {
-          const p = progressRec.progress.toFixed(1);
-          metaText += metaText ? " • " : "";
-          metaText += `${p}% watched`;
-        }
+        if (item.type === "tv" && item.season && item.episode) metaText += (metaText ? " • " : "") + `S${item.season}E${item.episode}`;
+        if (progressRec && progressRec.progress > 0) metaText += (metaText ? " • " : "") + `${progressRec.progress.toFixed(1)}% watched`;
         meta.textContent = metaText;
 
-        body.appendChild(title);
+        body.appendChild(titleEl);
         body.appendChild(meta);
+
+        if (item.recommendationReason && !progressRec) {
+          const badge = document.createElement("div");
+          badge.className = "recommendation-badge";
+          badge.textContent = item.recommendationReason;
+          card.appendChild(badge);
+        }
 
         card.appendChild(poster);
         card.appendChild(chip);
         card.appendChild(body);
 
-        if (progressRec && progressRec.progress) {
+        if (progressRec && progressRec.progress > 0 && progressRec.progress < 100) {
           const bar = document.createElement("div");
           bar.className = "progress-bar";
           const inner = document.createElement("div");
           inner.className = "progress-inner";
-          inner.style.width = `${Math.min(
-            progressRec.progress,
-            100
-          )}%`;
+          inner.style.width = `${Math.min(progressRec.progress, 100)}%`;
           bar.appendChild(inner);
           card.appendChild(bar);
         }
@@ -1722,579 +1079,334 @@
         return card;
       }
 
+      // ── Item lookup (fetch from TMDB if missing) ──────────────────────────────
       async function getItemForProgress(rec) {
         if (!rec.id || !rec.mediaType) return null;
-
         const key = `${rec.mediaType}:${String(rec.id)}`;
         let item = ITEM_INDEX[key];
         if (item) return item;
-
-        // Not in memory yet. Fetch full details from TMDB so we can build a card.
         try {
-          const path =
-            rec.mediaType === "movie" ? `/movie/${rec.id}` : `/tv/${rec.id}`;
+          const path = rec.mediaType === "movie" ? `/movie/${rec.id}` : `/tv/${rec.id}`;
           const data = await tmdbFetch(path);
-
-          if (!data || !data.id) {
-            return null;
-          }
-
+          if (!data || !data.id) return null;
           if (rec.mediaType === "movie") {
-            item = {
-              id: String(data.id),
-              tmdbId: String(data.id),
-              type: "movie",
-              title: data.title || data.original_title || "Untitled",
-              year: data.release_date
-                ? Number(data.release_date.slice(0, 4))
-                : "",
-              description: data.overview || "",
-              poster: data.poster_path
-                ? TMDB_POSTER_BASE + data.poster_path
-                : null,
-              backdrop: data.backdrop_path
-                ? TMDB_IMAGE_BASE + data.backdrop_path
-                : null,
-              genres: (data.genres || []).map((g) => g.id)
-            };
+            item = { id: String(data.id), tmdbId: String(data.id), type: "movie", title: data.title || data.original_title || "Untitled", year: data.release_date ? Number(data.release_date.slice(0, 4)) : "", description: data.overview || "", poster: data.poster_path ? TMDB_POSTER_BASE + data.poster_path : null, backdrop: data.backdrop_path ? TMDB_IMAGE_BASE + data.backdrop_path : null, genres: (data.genres || []).map(g => g.id) };
           } else {
-            item = {
-              id: String(data.id),
-              tmdbId: String(data.id),
-              type: "tv",
-              title: data.name || data.original_name || "Untitled",
-              year: data.first_air_date
-                ? Number(data.first_air_date.slice(0, 4))
-                : "",
-              description: data.overview || "",
-              season: rec.season || 1,
-              episode: rec.episode || 1,
-              poster: data.poster_path
-                ? TMDB_POSTER_BASE + data.poster_path
-                : null,
-              backdrop: data.backdrop_path
-                ? TMDB_IMAGE_BASE + data.backdrop_path
-                : null,
-              genres: (data.genres || []).map((g) => g.id)
-            };
+            item = { id: String(data.id), tmdbId: String(data.id), type: "tv", title: data.name || data.original_name || "Untitled", year: data.first_air_date ? Number(data.first_air_date.slice(0, 4)) : "", description: data.overview || "", season: rec.season || 1, episode: rec.episode || 1, poster: data.poster_path ? TMDB_POSTER_BASE + data.poster_path : null, backdrop: data.backdrop_path ? TMDB_IMAGE_BASE + data.backdrop_path : null, genres: (data.genres || []).map(g => g.id) };
           }
-
           rememberItems([item]);
           return item;
-        } catch (e) {
-          console.error("getItemForProgress tmdb error", e);
-          return null;
-        }
+        } catch (e) { console.error("getItemForProgress:", e); return null; }
       }
 
-      async function renderHomeContinueAndRecent() {
-        const progressEntries = loadAllProgressLocal();
+      // ── Row renderers ─────────────────────────────────────────────────────────
+      async function renderHomeContinue() {
         homeContinueScroll.innerHTML = "";
-
-        // Map from "mediaType:id" to the latest incomplete record
+        const progressEntries = loadAllProgressLocal();
         const latestByShow = {};
-
         for (const rec of progressEntries) {
-          if (!rec.id || !rec.mediaType) continue;
-
-          const progressValue =
-            typeof rec.progress === "number" ? rec.progress : 0;
-
-          // Ignore entries that are basically unwatched or fully watched
-          if (progressValue <= 0 || progressValue >= 98) {
-            continue;
-          }
-
+          if (!rec.id || !rec.mediaType || rec.progress <= 0.1) continue;
           const showKey = `${rec.mediaType}:${String(rec.id)}`;
-
-          // progressEntries are already sorted newest first,
-          // so the first time we see a showKey is the latest episode.
-          if (!latestByShow[showKey]) {
-            latestByShow[showKey] = rec;
+          if (rec.mediaType === "tv") {
+            const ex = latestByShow[showKey];
+            if (!ex || rec.season > ex.season || (rec.season === ex.season && rec.episode > ex.episode)) latestByShow[showKey] = rec;
+          } else {
+            if (!latestByShow[showKey]) latestByShow[showKey] = rec;
           }
         }
-
-        const recsToShow = Object.values(latestByShow);
-
-        for (const rec of recsToShow) {
+        for (const rec of Object.values(latestByShow)) {
           const item = await getItemForProgress(rec);
           if (!item) continue;
-
           const clone = { ...item };
-
-          // Make sure TV cards show the correct season and episode
-          if (clone.type === "tv") {
-            clone.season = rec.season || item.season || 1;
-            clone.episode = rec.episode || item.episode || 1;
-          }
-
-          const card = createCard(clone, rec);
-          homeContinueScroll.appendChild(card);
+          if (clone.type === "tv") { clone.season = rec.season || 1; clone.episode = rec.episode || 1; }
+          homeContinueScroll.appendChild(createCard(clone, rec));
         }
-
-        homeContinueRow.style.display =
-          homeContinueScroll.children.length > 0 ? "block" : "none";
+        homeContinueRow.style.display = homeContinueScroll.children.length > 0 ? "block" : "none";
       }
 
-      function computeRecommendations() {
+      async function updateBecauseSelector() {
+        becauseSelector.innerHTML = '<option value="">Loading...</option>';
         const progressEntries = loadAllProgressLocal();
-        const movieGenreCounts = {};
-        const tvGenreCounts = {};
-        const watchedMovies = new Set();
-        const watchedTv = new Set();
+        if (!progressEntries.length) { becauseSelector.innerHTML = '<option value="">No watch history yet</option>'; return; }
 
-        progressEntries.forEach((rec) => {
-          if (!rec.id || !rec.mediaType) return;
-          const item = ITEM_INDEX[`${rec.mediaType}:${String(rec.id)}`];
-          if (!item || !item.genres) return;
-          const weight =
-            typeof rec.progress === "number" ? rec.progress : 1;
-          if (rec.mediaType === "movie") {
-            watchedMovies.add(String(rec.id));
-            item.genres.forEach((g) => {
-              movieGenreCounts[g] = (movieGenreCounts[g] || 0) + weight;
-            });
-          } else if (rec.mediaType === "tv") {
-            watchedTv.add(String(rec.id));
-            item.genres.forEach((g) => {
-              tvGenreCounts[g] = (tvGenreCounts[g] || 0) + weight;
-            });
-          }
-        });
-
-        function scoreItem(item, counts) {
-          let score = 0;
-          (item.genres || []).forEach((g) => {
-            score += counts[g] || 0;
-          });
-          return score;
+        const uniqueItems = new Map();
+        for (const rec of progressEntries) {
+          if (!rec.id || !rec.mediaType || rec.progress <= 0.1) continue;
+          const key = `${rec.mediaType}:${rec.id}`;
+          const ex = uniqueItems.get(key);
+          if (rec.mediaType === "tv") { if (!ex || rec.season > ex.season || (rec.season === ex.season && rec.episode > ex.episode)) uniqueItems.set(key, rec); }
+          else { if (!ex || rec.timestamp > ex.timestamp) uniqueItems.set(key, rec); }
         }
 
-        const movieCandidates = CATALOG.movies.filter(
-          (m) => !watchedMovies.has(String(m.tmdbId))
-        );
-        const tvCandidates = CATALOG.tv.filter(
-          (t) => !watchedTv.has(String(t.tmdbId))
-        );
+        const items = Array.from(uniqueItems.values()).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        becauseSelector.innerHTML = '<option value="">Select a title...</option>';
+        allWatchedItems = [];
 
-        const movieRecs = movieCandidates
-          .map((it) => ({
-            item: it,
-            score: scoreItem(it, movieGenreCounts)
-          }))
-          .filter((x) => x.score > 0)
-          .sort((a, b) => b.score - a.score)
-          .slice(0, 20)
-          .map((x) => x.item);
+        for (let i = 0; i < items.length; i++) {
+          const rec = items[i];
+          const item = await getItemForProgress(rec);
+          if (!item) continue;
+          allWatchedItems[i] = { rec, item };
+          const o = document.createElement("option");
+          o.value = i;
+          let text = item.title;
+          if (rec.mediaType === "tv" && rec.season && rec.episode) text += ` (S${rec.season}E${rec.episode})`;
+          if (rec.progress > 0 && rec.progress < 100) text += ` — ${rec.progress.toFixed(0)}%`;
+          o.textContent = text;
+          becauseSelector.appendChild(o);
+        }
 
-        const tvRecs = tvCandidates
-          .map((it) => ({
-            item: it,
-            score: scoreItem(it, tvGenreCounts)
-          }))
-          .filter((x) => x.score > 0)
-          .sort((a, b) => b.score - a.score)
-          .slice(0, 20)
-          .map((x) => x.item);
-
-        return { movieRecs, tvRecs };
+        if (items.length && !currentBecauseSeed) {
+          const first = await getItemForProgress(items[0]);
+          if (first) { currentBecauseSeed = first; await renderBecauseRow(); }
+        }
       }
 
-      function renderHomeRecommendations() {
-        const { movieRecs, tvRecs } = computeRecommendations();
-
-        homeRecMoviesScroll.innerHTML = "";
-        movieRecs.forEach((item) => {
-          const prog = loadProgressForItem(item);
-          const card = createCard(item, prog);
-          homeRecMoviesScroll.appendChild(card);
-        });
-        homeRecMoviesRow.style.display =
-          homeRecMoviesScroll.children.length > 0 ? "block" : "none";
-
-        homeRecTvScroll.innerHTML = "";
-        tvRecs.forEach((item) => {
-          const prog = loadProgressForItem(item);
-          const card = createCard(item, prog);
-          homeRecTvScroll.appendChild(card);
-        });
-        homeRecTvRow.style.display =
-          homeRecTvScroll.children.length > 0 ? "block" : "none";
+      async function renderBecauseRow() {
+        if (!currentBecauseSeed) { homeBecauseRow.style.display = "none"; return; }
+        const recs = getBecauseYouWatched(currentBecauseSeed, 20);
+        renderRow(homeBecauseScroll, recs);
+        homeBecauseTitle.textContent = `Because you watched ${currentBecauseSeed.title}`;
+        homeBecauseRow.style.display = recs.length > 0 ? "block" : "none";
       }
 
-      function renderHomeRows() {
+      async function renderHomeRows() {
         if (!currentProfile) return;
 
+        // Show trending rows immediately (they're already loaded)
         homeMoviesRow.innerHTML = "";
         homeTvRow.innerHTML = "";
-        homeMoviesRowTitle.textContent = "Trending movies";
-        homeTvRowTitle.textContent = "Trending series";
+        CATALOG.movies.slice(0, 20).forEach(item => homeMoviesRow.appendChild(createCard(item, loadProgressForItem(item))));
+        CATALOG.tv.slice(0, 20).forEach(item => homeTvRow.appendChild(createCard(item, loadProgressForItem(item))));
 
-        CATALOG.movies.forEach((item) => {
-          const prog = loadProgressForItem(item);
-          const card = createCard(item, prog);
-          homeMoviesRow.appendChild(card);
-        });
-
-        CATALOG.tv.forEach((item) => {
-          const prog = loadProgressForItem(item);
-          const card = createCard(item, prog);
-          homeTvRow.appendChild(card);
-        });
-
-        renderHomeContinueAndRecent();
-          // async, side effect only
-        renderHomeRecommendations();
         renderHomeHero();
+        await renderHomeContinue();
+
+        // Personalised recs — fetched async, rows appear when ready
+        const hasTaste = buildTasteProfile().totalWatched > 0;
+
+        if (hasTaste) {
+          // Show loading skeletons in rec rows while we fetch
+          homeTopPicksMoviesRow.style.display = "block";
+          homeTopPicksShowsRow.style.display = "block";
+          homeTopPicksMoviesScroll.innerHTML = '<div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div>';
+          homeTopPicksShowsScroll.innerHTML = '<div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div>';
+
+          const [moviePicks, showPicks] = await Promise.all([
+            fetchPersonalisedRecs("movie", 20).catch(() => []),
+            fetchPersonalisedRecs("tv", 20).catch(() => [])
+          ]);
+
+          renderRow(homeTopPicksMoviesScroll, moviePicks);
+          homeTopPicksMoviesRow.style.display = moviePicks.length > 0 ? "block" : "none";
+          renderRow(homeTopPicksShowsScroll, showPicks);
+          homeTopPicksShowsRow.style.display = showPicks.length > 0 ? "block" : "none";
+
+          await updateBecauseSelector();
+          await renderBecauseRow();
+        } else {
+          homeTopPicksMoviesRow.style.display = "none";
+          homeTopPicksShowsRow.style.display = "none";
+          homeBecauseRow.style.display = "none";
+        }
+      }
+
+      function renderRow(container, items) {
+        container.innerHTML = "";
+        items.forEach(item => container.appendChild(createCard(item, loadProgressForItem(item))));
+      }
+
+      // ── Browse grids ──────────────────────────────────────────────────────────
+      async function loadMoviesWithFilters(reset = true) {
+        if (reset) { moviesBrowseItems = []; moviesBrowseNextPage = 1; }
+        const params = { sort_by: movieFilters.sortBy, include_adult: "false", page: moviesBrowseNextPage };
+        if (movieFilters.genre) params.with_genres = String(movieFilters.genre);
+        if (movieFilters.yearFrom) params["primary_release_date.gte"] = `${movieFilters.yearFrom}-01-01`;
+        if (movieFilters.yearTo) params["primary_release_date.lte"] = `${movieFilters.yearTo}-12-31`;
+        if (moviesBrowseItems.length === 0) moviesBrowseGrid.innerHTML = "<div class='small-muted'>Loading...</div>";
+        try {
+          const data = await tmdbFetch("/discover/movie", params);
+          const newItems = (data.results || []).map(r => ({ id: String(r.id), tmdbId: String(r.id), type: "movie", title: r.title || r.original_title || "Untitled", year: r.release_date ? Number(r.release_date.slice(0, 4)) : "", description: r.overview || "", poster: r.poster_path ? TMDB_POSTER_BASE + r.poster_path : null, genres: r.genre_ids || [] }));
+          moviesBrowseItems = moviesBrowseItems.concat(newItems);
+          rememberItems(newItems);
+          moviesBrowseNextPage++;
+          renderMoviesBrowseGrid();
+        } catch (e) { console.error("loadMoviesWithFilters:", e); }
+      }
+
+      async function loadTvWithFilters(reset = true) {
+        if (reset) { tvBrowseItems = []; tvBrowseNextPage = 1; }
+        const params = { sort_by: tvFilters.sortBy, include_adult: "false", page: tvBrowseNextPage };
+        if (tvFilters.genre) params.with_genres = String(tvFilters.genre);
+        if (tvFilters.yearFrom) params["first_air_date.gte"] = `${tvFilters.yearFrom}-01-01`;
+        if (tvFilters.yearTo) params["first_air_date.lte"] = `${tvFilters.yearTo}-12-31`;
+        if (tvBrowseItems.length === 0) tvBrowseGrid.innerHTML = "<div class='small-muted'>Loading...</div>";
+        try {
+          const data = await tmdbFetch("/discover/tv", params);
+          const newItems = (data.results || []).map(r => ({ id: String(r.id), tmdbId: String(r.id), type: "tv", title: r.name || r.original_name || "Untitled", year: r.first_air_date ? Number(r.first_air_date.slice(0, 4)) : "", description: r.overview || "", season: 1, episode: 1, poster: r.poster_path ? TMDB_POSTER_BASE + r.poster_path : null, genres: r.genre_ids || [] }));
+          tvBrowseItems = tvBrowseItems.concat(newItems);
+          rememberItems(newItems);
+          tvBrowseNextPage++;
+          renderTvBrowseGrid();
+        } catch (e) { console.error("loadTvWithFilters:", e); }
       }
 
       function renderMoviesBrowseGrid() {
         moviesBrowseGrid.innerHTML = "";
-        const title =
-          moviesBrowseCurrentGenre &&
-          MOVIE_GENRE_MAP[moviesBrowseCurrentGenre]
-            ? MOVIE_GENRE_MAP[moviesBrowseCurrentGenre]
-            : "All movies";
-        moviesBrowseTitle.textContent = title;
-        moviesBrowseItems.forEach((item) => {
-          const prog = loadProgressForItem(item);
-          const card = createCard(item, prog);
-          moviesBrowseGrid.appendChild(card);
-        });
+        let title = movieFilters.genre && MOVIE_GENRE_MAP[movieFilters.genre] ? MOVIE_GENRE_MAP[movieFilters.genre] : "All movies";
+        if (movieFilters.yearFrom || movieFilters.yearTo) title += ` (${movieFilters.yearFrom || "Any"} – ${movieFilters.yearTo || "Any"})`;
+        document.getElementById("moviesBrowseTitle").textContent = title;
+        moviesBrowseItems.forEach(item => moviesBrowseGrid.appendChild(createCard(item, loadProgressForItem(item))));
       }
 
       function renderTvBrowseGrid() {
         tvBrowseGrid.innerHTML = "";
-        const title =
-          tvBrowseCurrentGenre && TV_GENRE_MAP[tvBrowseCurrentGenre]
-            ? TV_GENRE_MAP[tvBrowseCurrentGenre]
-            : "All shows";
-        tvBrowseTitle.textContent = title;
-        tvBrowseItems.forEach((item) => {
-          const prog = loadProgressForItem(item);
-          const card = createCard(item, prog);
-          tvBrowseGrid.appendChild(card);
-        });
+        let title = tvFilters.genre && TV_GENRE_MAP[tvFilters.genre] ? TV_GENRE_MAP[tvFilters.genre] : "All shows";
+        if (tvFilters.yearFrom || tvFilters.yearTo) title += ` (${tvFilters.yearFrom || "Any"} – ${tvFilters.yearTo || "Any"})`;
+        document.getElementById("tvBrowseTitle").textContent = title;
+        tvBrowseItems.forEach(item => tvBrowseGrid.appendChild(createCard(item, loadProgressForItem(item))));
       }
 
-      function renderSearchResults(items, query) {
-        searchMoviesRow.innerHTML = "";
-        searchTvRow.innerHTML = "";
-
-        searchMainTitle.textContent = `Results for "${query}"`;
-        searchMoviesRowTitle.textContent = "Movies";
-        searchTvRowTitle.textContent = "Series";
-
-        const movies = items.filter((i) => i.type === "movie");
-        const tvs = items.filter((i) => i.type === "tv");
-
-        movies.forEach((item) => {
-          const prog = loadProgressForItem(item);
-          const card = createCard(item, prog);
-          searchMoviesRow.appendChild(card);
-        });
-
-        tvs.forEach((item) => {
-          const prog = loadProgressForItem(item);
-          const card = createCard(item, prog);
-          searchTvRow.appendChild(card);
-        });
-      }
-
-      function renderMovieGenresFilter() {
-        movieGenresBar.innerHTML = "";
-        if (!MOVIE_GENRES.length) return;
-
-        const allChip = document.createElement("div");
-        allChip.className =
-          "genre-chip" + (moviesBrowseCurrentGenre ? "" : " active");
-        allChip.textContent = "All";
-        allChip.addEventListener("click", () => {
-          moviesBrowseCurrentGenre = null;
-          Array.from(movieGenresBar.children).forEach((c) =>
-            c.classList.remove("active")
-          );
-          allChip.classList.add("active");
-          loadMoviesBrowse(null, true);
-        });
-        movieGenresBar.appendChild(allChip);
-
-        MOVIE_GENRES.forEach((g) => {
-          const chip = document.createElement("div");
-          chip.className =
-            "genre-chip" +
-            (moviesBrowseCurrentGenre === g.id ? " active" : "");
-          chip.textContent = g.name;
-          chip.dataset.genreId = String(g.id);
-          chip.addEventListener("click", () => {
-            moviesBrowseCurrentGenre = g.id;
-            Array.from(movieGenresBar.children).forEach((c) =>
-              c.classList.remove("active")
-            );
-            chip.classList.add("active");
-            loadMoviesBrowse(g.id, true);
+      // ── Search ────────────────────────────────────────────────────────────────
+      async function performTmdbSearch(query) {
+        try {
+          const json = await tmdbFetch("/search/multi", { query, include_adult: "false" });
+          const items = (json.results || []).filter(r => r.media_type === "movie" || r.media_type === "tv").slice(0, 40).map(r => {
+            if (r.media_type === "movie") return { id: String(r.id), tmdbId: String(r.id), type: "movie", title: r.title || r.original_title || "Untitled", year: r.release_date ? Number(r.release_date.slice(0, 4)) : "", description: r.overview || "", poster: r.poster_path ? TMDB_POSTER_BASE + r.poster_path : null, genres: r.genre_ids || [] };
+            return { id: String(r.id), tmdbId: String(r.id), type: "tv", title: r.name || r.original_name || "Untitled", year: r.first_air_date ? Number(r.first_air_date.slice(0, 4)) : "", description: r.overview || "", season: 1, episode: 1, poster: r.poster_path ? TMDB_POSTER_BASE + r.poster_path : null, genres: r.genre_ids || [] };
           });
-          movieGenresBar.appendChild(chip);
-        });
+          rememberItems(items);
+          searchMainTitle.textContent = `Results for "${query}"`;
+          searchMoviesRow.innerHTML = "";
+          searchTvRow.innerHTML = "";
+          items.filter(i => i.type === "movie").forEach(item => searchMoviesRow.appendChild(createCard(item, loadProgressForItem(item))));
+          items.filter(i => i.type === "tv").forEach(item => searchTvRow.appendChild(createCard(item, loadProgressForItem(item))));
+        } catch (e) { console.error("performTmdbSearch:", e); }
       }
 
-      function renderTvGenresFilter() {
-        tvGenresBar.innerHTML = "";
-        if (!TV_GENRES.length) return;
-
-        const allChip = document.createElement("div");
-        allChip.className =
-          "genre-chip" + (tvBrowseCurrentGenre ? "" : " active");
-        allChip.textContent = "All";
-        allChip.addEventListener("click", () => {
-          tvBrowseCurrentGenre = null;
-          Array.from(tvGenresBar.children).forEach((c) =>
-            c.classList.remove("active")
-          );
-          allChip.classList.add("active");
-          loadTvBrowse(null, true);
-        });
-        tvGenresBar.appendChild(allChip);
-
-        TV_GENRES.forEach((g) => {
-          const chip = document.createElement("div");
-          chip.className =
-            "genre-chip" +
-            (tvBrowseCurrentGenre === g.id ? " active" : "");
-          chip.textContent = g.name;
-          chip.dataset.genreId = String(g.id);
-          chip.addEventListener("click", () => {
-            tvBrowseCurrentGenre = g.id;
-            Array.from(tvGenresBar.children).forEach((c) =>
-              c.classList.remove("active")
-            );
-            chip.classList.add("active");
-            loadTvBrowse(g.id, true);
-          });
-          tvGenresBar.appendChild(chip);
-        });
-      }
-
-      // 8. Hero slider
-
-      function setHeroIndex(index) {
+      // ── Hero ──────────────────────────────────────────────────────────────────
+      function setHeroIndex(idx) {
         if (!heroItems.length) return;
-        heroIndex = (index + heroItems.length) % heroItems.length;
+        heroIndex = (idx + heroItems.length) % heroItems.length;
         const item = heroItems[heroIndex];
         homeHeroTitle.textContent = item.title;
-        homeHeroMeta.textContent =
-          (item.type === "movie" ? "Movie" : "Series") +
-          (item.year ? " • " + item.year : "");
-        homeHeroDescription.textContent =
-          item.description || "No description available.";
-        if (item.backdrop) {
-          homeHeroBg.style.backgroundImage = `url("${item.backdrop}")`;
-        } else if (item.poster) {
-          homeHeroBg.style.backgroundImage = `url("${item.poster}")`;
-        } else {
-          homeHeroBg.style.backgroundImage =
-            "linear-gradient(135deg, #222 0%, #333 50%, #111 100%)";
-        }
+        homeHeroMeta.textContent = (item.type === "movie" ? "Movie" : "Series") + (item.year ? " • " + item.year : "");
+        homeHeroDescription.textContent = item.description || "No description available.";
+        homeHeroBg.classList.remove("skeleton", "skeleton-hero");
+        homeHeroBg.style.backgroundImage = item.backdrop ? `url("${item.backdrop}")` : (item.poster ? `url("${item.poster}")` : "linear-gradient(135deg, #222 0%, #333 50%, #111 100%)");
         homeHeroDots.innerHTML = "";
-        heroItems.forEach((_, idx) => {
+        heroItems.forEach((_, i) => {
           const dot = document.createElement("div");
-          dot.className =
-            "hero-dot" + (idx === heroIndex ? " active" : "");
-          dot.addEventListener("click", () => {
-            setHeroIndex(idx);
-            restartHeroTimer();
-          });
+          dot.className = "hero-dot" + (i === heroIndex ? " active" : "");
+          dot.addEventListener("click", () => { setHeroIndex(i); restartHeroTimer(); });
           homeHeroDots.appendChild(dot);
         });
-        homeHeroPlayBtn.onclick = () => {
-          loadItem(item, true);
-        };
-        homeHeroInfoBtn.onclick = () => {
-          loadItem(item, false);
-        };
+        homeHeroPlayBtn.onclick = () => loadItem(item, true);
+        homeHeroInfoBtn.onclick = () => loadItem(item, false);
       }
 
-      function renderHomeHero() {
-        if (!heroItems.length) return;
-        setHeroIndex(0);
-        restartHeroTimer();
-      }
+      function renderHomeHero() { if (heroItems.length) { setHeroIndex(0); restartHeroTimer(); } }
+      function restartHeroTimer() { if (heroTimer) clearInterval(heroTimer); heroTimer = setInterval(() => setHeroIndex(heroIndex + 1), 8000); }
 
-      function restartHeroTimer() {
-        if (heroTimer) clearInterval(heroTimer);
-        heroTimer = setInterval(() => {
-          setHeroIndex(heroIndex + 1);
-        }, 8000);
-      }
-
-      // 9. Vidking player events
-
+      // ── Events ────────────────────────────────────────────────────────────────
       window.addEventListener("message", function (event) {
         let payload = event.data;
-        try {
-          if (typeof payload === "string") {
-            payload = JSON.parse(payload);
-          }
-        } catch (e) {
-          return;
-        }
+        try { if (typeof payload === "string") payload = JSON.parse(payload); } catch (e) { return; }
         if (!payload || payload.type !== "PLAYER_EVENT") return;
         const data = payload.data || {};
         if (!data.id) return;
-
-        // Save only to localStorage on each event
         saveProgressLocal(data);
-
         if (currentItem && String(data.id) === String(currentItem.tmdbId)) {
           if (data.event === "play") detailStatus.textContent = "Playing";
           if (data.event === "pause") detailStatus.textContent = "Paused";
           if (data.event === "ended") detailStatus.textContent = "Finished";
-          if (data.event === "seeked") detailStatus.textContent = "Seeking";
-          if (data.event === "timeupdate")
-            detailStatus.textContent = "Playing";
-          if (data.currentTime != null && data.duration != null) {
-            const pct =
-              typeof data.progress === "number"
-                ? data.progress.toFixed(1)
-                : "0.0";
-            detailProgressText.textContent =
-              `${pct}% watched • ${formatTime(data.currentTime)} / ${formatTime(
-                data.duration
-              )}`;
-          }
+          if (data.currentTime != null && data.duration != null) detailProgressText.textContent = `${(data.progress || 0).toFixed(1)}% watched • ${formatTime(data.currentTime)} / ${formatTime(data.duration)}`;
         }
-
-        // If the video fully finished, flush that session now too
-        if (data.event === "ended") {
-          flushCurrentPlaybackToBackend();
-        }
-
-        renderHomeContinueAndRecent();
-        renderHomeRecommendations();
+        if (data.event === "ended") flushCurrentPlaybackToBackend();
       });
-
-      // 10. Search handling
 
       let searchTimeout = null;
       searchInput.addEventListener("input", () => {
         const query = searchInput.value.trim();
         if (searchTimeout) clearTimeout(searchTimeout);
-        if (!query) {
-          showView("home");
-          renderHomeRows();
-          return;
-        }
-        searchTimeout = setTimeout(() => {
-          showView("search");
-          performTmdbSearch(query);
-        }, 400);
+        if (!query) { showView("home"); return; }
+        searchTimeout = setTimeout(() => { showView("search"); performTmdbSearch(query); }, 400);
       });
 
-      // 11. Events wire up
-
-      homeLogo.addEventListener("click", () => {
-        searchInput.value = "";
-        showView("home");
-        renderHomeRows();
+      becauseSelector.addEventListener("change", async e => {
+        const idx = parseInt(e.target.value);
+        if (!isNaN(idx) && allWatchedItems[idx]) { currentBecauseSeed = allWatchedItems[idx].item; await renderBecauseRow(); }
       });
 
-      navHome.addEventListener("click", () => {
-        searchInput.value = "";
-        showView("home");
-        renderHomeRows();
+      applyMovieFilters.addEventListener("click", () => {
+        movieFilters = { genre: movieGenreFilter.value ? parseInt(movieGenreFilter.value) : null, yearFrom: movieYearFrom.value ? parseInt(movieYearFrom.value) : null, yearTo: movieYearTo.value ? parseInt(movieYearTo.value) : null, sortBy: movieSortBy.value };
+        loadMoviesWithFilters(true);
+      });
+      resetMovieFilters.addEventListener("click", () => {
+        movieGenreFilter.value = ""; movieYearFrom.value = ""; movieYearTo.value = ""; movieSortBy.value = "popularity.desc";
+        movieFilters = { genre: null, yearFrom: null, yearTo: null, sortBy: "popularity.desc" };
+        loadMoviesWithFilters(true);
+      });
+      applyTvFilters.addEventListener("click", () => {
+        tvFilters = { genre: tvGenreFilter.value ? parseInt(tvGenreFilter.value) : null, yearFrom: tvYearFrom.value ? parseInt(tvYearFrom.value) : null, yearTo: tvYearTo.value ? parseInt(tvYearTo.value) : null, sortBy: tvSortBy.value };
+        loadTvWithFilters(true);
+      });
+      resetTvFilters.addEventListener("click", () => {
+        tvGenreFilter.value = ""; tvYearFrom.value = ""; tvYearTo.value = ""; tvSortBy.value = "popularity.desc";
+        tvFilters = { genre: null, yearFrom: null, yearTo: null, sortBy: "popularity.desc" };
+        loadTvWithFilters(true);
       });
 
-      navMovies.addEventListener("click", () => {
-        searchInput.value = "";
-        showView("movies");
-        if (!moviesBrowseItems.length && currentProfile) {
-          loadMoviesBrowse(null, true);
-        }
-      });
-
-      navTv.addEventListener("click", () => {
-        searchInput.value = "";
-        showView("tv");
-        if (!tvBrowseItems.length && currentProfile) {
-          loadTvBrowse(null, true);
-        }
-      });
-
-      moviesLoadMoreBtn.addEventListener("click", () => {
-        loadMoviesBrowse(moviesBrowseCurrentGenre, false);
-      });
-
-      tvLoadMoreBtn.addEventListener("click", () => {
-        loadTvBrowse(tvBrowseCurrentGenre, false);
-      });
-
-      profileButton.addEventListener("click", () => {
-        showView("profiles");
-      });
-
+      homeLogo.addEventListener("click", () => { searchInput.value = ""; showView("home"); renderHomeRows(); });
+      navHome.addEventListener("click", () => { searchInput.value = ""; showView("home"); renderHomeRows(); });
+      navMovies.addEventListener("click", () => { searchInput.value = ""; showView("movies"); if (!moviesBrowseItems.length && currentProfile) loadMoviesWithFilters(true); });
+      navTv.addEventListener("click", () => { searchInput.value = ""; showView("tv"); if (!tvBrowseItems.length && currentProfile) loadTvWithFilters(true); });
+      moviesLoadMoreBtn.addEventListener("click", () => loadMoviesWithFilters(false));
+      tvLoadMoreBtn.addEventListener("click", () => loadTvWithFilters(false));
+      profileButton.addEventListener("click", () => showView("profiles"));
       addProfileBtn.addEventListener("click", () => {
         const name = prompt("Profile name");
         if (!name) return;
         const trimmed = name.trim();
         if (!trimmed) return;
-        if (profiles.find((p) => p.name === trimmed)) {
-          alert("Profile with that name already exists");
-          return;
-        }
+        if (profiles.find(p => p.name === trimmed)) { alert("Profile already exists"); return; }
         profiles.push({ name: trimmed });
         saveProfilesToStorage();
         renderProfiles();
       });
+      window.addEventListener("beforeunload", () => flushCurrentPlaybackToBackend());
 
-      // On tab close or refresh, try to flush current playback once
-      window.addEventListener("beforeunload", () => {
-        // Fire and forget, browser may or may not wait
-        flushCurrentPlaybackToBackend();
-      });
-
-      // 12. Init
-
+      // ── Init ──────────────────────────────────────────────────────────────────
       async function init() {
+        // FIX: Load local profiles first so UI shows immediately.
+        // Backend sync runs in parallel and doesn't block the user.
         const localProfiles = loadProfilesFromStorage();
-        const storedProfileName =
-          localStorage.getItem(CURRENT_PROFILE_KEY) || null;
-
-        const backendProfiles = await loadProfilesFromBackend();
+        const storedProfileName = localStorage.getItem(CURRENT_PROFILE_KEY) || null;
 
         let merged = [];
         const seen = new Set();
-
         function addList(list) {
-          (list || []).forEach((p) => {
+          (list || []).forEach(p => {
             const name = (p && p.name ? String(p.name) : "").trim();
             if (!name || seen.has(name)) return;
-            seen.add(name);
-            merged.push({ name });
+            seen.add(name); merged.push({ name });
           });
         }
 
-        if (backendProfiles.length) {
-          addList(backendProfiles);
-          addList(localProfiles);
-        } else if (localProfiles.length) {
-          addList(localProfiles);
-        } else {
-          merged = [{ name: "You" }, { name: "Guest" }];
-        }
-
+        if (localProfiles.length) addList(localProfiles);
+        else merged = [{ name: "You" }, { name: "Guest" }];
         profiles = merged;
-        saveProfilesToStorage();
         renderProfiles();
 
-        if (storedProfileName && profiles.find((p) => p.name === storedProfileName)) {
+        if (storedProfileName && profiles.find(p => p.name === storedProfileName)) {
           currentProfile = storedProfileName;
         } else if (profiles.length) {
           currentProfile = profiles[0].name;
           localStorage.setItem(CURRENT_PROFILE_KEY, currentProfile);
         }
-
         updateProfileHeader();
 
+        // Start TMDB fetches in parallel — genres run alongside trending, not after
         await Promise.all([
           fetchTrending(),
           fetchMovieGenres(),
@@ -2302,9 +1414,18 @@
         ]);
 
         if (currentProfile) {
-          await syncProgressFromBackendToLocal(currentProfile);
-          renderHomeRows();
+          // Show home immediately with trending while recs + backend load in bg
           showView("home");
+          renderHomeRows(); // renders trending instantly; personalised rows fill in async
+          // Backend profile sync + progress runs in background — doesn't block UI
+          loadProfilesFromBackend().then(backendProfiles => {
+            if (backendProfiles.length) {
+              addList(backendProfiles);
+              profiles = merged;
+              saveProfilesToStorage();
+            }
+          });
+          syncProgressFromBackendToLocal(currentProfile).then(() => renderHomeRows());
         } else {
           showView("profiles");
         }
