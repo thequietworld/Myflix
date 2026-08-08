@@ -974,12 +974,8 @@
       // ── Player URL ────────────────────────────────────────────────────────────
       function buildPlayerUrl(item, startSeconds, forceFresh) {
         const base = "https://www.vidking.net/embed";
-        // progress=N tells vidking exactly where to start (overrides its own saved position).
-        // forceFresh cache-busts so vidking sees a new embed and can't fall back to stored state.
-        // Only force a seek when restarting from the beginning (startSeconds passed as -1 sentinel).
-        // Otherwise let vidking restore its own saved position — avoids the two-systems conflict.
         const progressParam = (startSeconds > 0) ? `&progress=${Math.floor(startSeconds)}` : "";
-        // note: normal resume no longer passes progress; vidking handles it        const bustParam = forceFresh ? `&_cb=${Date.now()}` : "";
+        const bustParam = forceFresh ? `&_cb=${Date.now()}` : "";
         if (item.type === "movie") return `${base}/movie/${item.tmdbId}?color=e50914&autoPlay=true${progressParam}${bustParam}`;
         if (item.type === "tv") return `${base}/tv/${item.tmdbId}/${item.season || 1}/${item.episode || 1}?color=e50914&autoPlay=true&nextEpisode=true&episodeSelector=true${progressParam}${bustParam}`;
         return "";
