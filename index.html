@@ -564,16 +564,23 @@
 
           const deleteBtn = document.createElement("button");
           deleteBtn.textContent = "Delete";
-          deleteBtn.addEventListener("click", evt => {
+          deleteBtn.addEventListener("click", async evt => {
             evt.stopPropagation();
-            if (!confirm(`Delete profile "${p.name}" and its local watch history?`)) return;
-            clearProfileProgress(p.name);
+            if (!confirm(`Delete profile "${p.name}" and its watch history?`)) return;
+            const name = p.name;
+            clearProfileProgress(name);
             profiles = profiles.filter(x => x !== p);
             if (!profiles.length) profiles = [{ name: "You" }, { name: "Guest" }];
             saveProfilesToStorage();
-            if (currentProfile === p.name) { currentProfile = null; localStorage.removeItem(CURRENT_PROFILE_KEY); updateProfileHeader(); }
+            if (currentProfile === name) { currentProfile = null; localStorage.removeItem(CURRENT_PROFILE_KEY); updateProfileHeader(); }
             renderProfiles();
             showView("profiles");
+            try {
+              await fetch(API_BASE + "/profiles/delete", {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name })
+              });
+            } catch (e) { console.error("delete:", e); }
           });
 
           actions.appendChild(editBtn);
@@ -1421,9 +1428,11 @@
           // Backend profile sync + progress runs in background — doesn't block UI
           loadProfilesFromBackend().then(backendProfiles => {
             if (backendProfiles.length) {
-              addList(backendProfiles);
-              profiles = merged;
-              saveProfilesToStorage();
+              // Backend is the source of truth for the profile LIST.
+              // Trust it directly so a deleted profile doesn't get merged back in.
+              profiles = backendProfiles.map(p => ({ name: p.name }));
+              localStorage.setItem(PROFILES_KEY, JSON.stringify(profiles));
+              renderProfiles();
             }
           });
           syncProgressFromBackendToLocal(currentProfile).then(() => renderHomeRows());
