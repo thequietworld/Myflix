@@ -976,8 +976,10 @@
         const base = "https://www.vidking.net/embed";
         // progress=N tells vidking exactly where to start (overrides its own saved position).
         // forceFresh cache-busts so vidking sees a new embed and can't fall back to stored state.
+        // Only force a seek when restarting from the beginning (startSeconds passed as -1 sentinel).
+        // Otherwise let vidking restore its own saved position — avoids the two-systems conflict.
         const progressParam = (startSeconds > 0) ? `&progress=${Math.floor(startSeconds)}` : "";
-        const bustParam = forceFresh ? `&_cb=${Date.now()}` : "";
+        // note: normal resume no longer passes progress; vidking handles it        const bustParam = forceFresh ? `&_cb=${Date.now()}` : "";
         if (item.type === "movie") return `${base}/movie/${item.tmdbId}?color=e50914&autoPlay=true${progressParam}${bustParam}`;
         if (item.type === "tv") return `${base}/tv/${item.tmdbId}/${item.season || 1}/${item.episode || 1}?color=e50914&autoPlay=true&nextEpisode=true&episodeSelector=true${progressParam}${bustParam}`;
         return "";
@@ -1027,8 +1029,9 @@
           startSeconds = 0;
           restartBtn.style.display = "none";
           detailProgressText.textContent = "Starting from the beginning...";
-        } else if (resume && saved && saved.currentTime && saved.progress >= 5) {
-          // Resume where they left off — pass exact seconds to vidking via progress= param
+        } else if (resume && saved && saved.currentTime && saved.progress >= 5 && saved.progress < 90) {
+          // Resume mid-episode. Skip the force-seek if it's near the end (>=90%) —
+          // seeking to the last few seconds is what causes the end-of-episode glitch.
           startSeconds = saved.currentTime;
           detailProgressText.textContent = `Resuming at ${formatTime(startSeconds)} • ${saved.progress.toFixed(1)}% watched`;
         } else {
@@ -1121,12 +1124,8 @@
         for (const rec of progressEntries) {
           if (!rec.id || !rec.mediaType || rec.progress <= 0.1) continue;
           const showKey = `${rec.mediaType}:${String(rec.id)}`;
-          if (rec.mediaType === "tv") {
-            const ex = latestByShow[showKey];
-            if (!ex || rec.season > ex.season || (rec.season === ex.season && rec.episode > ex.episode)) latestByShow[showKey] = rec;
-          } else {
-            if (!latestByShow[showKey]) latestByShow[showKey] = rec;
-          }
+          const ex = latestByShow[showKey];
+          if (!ex || (rec.timestamp || 0) > (ex.timestamp || 0)) latestByShow[showKey] = rec;
         }
         for (const rec of Object.values(latestByShow)) {
           const item = await getItemForProgress(rec);
