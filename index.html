@@ -973,7 +973,7 @@
 
       // ── Player URL ────────────────────────────────────────────────────────────
       function buildPlayerUrl(item, startSeconds, forceFresh) {
-        const base = "https://www.vidking.net/embed";
+        const base = "https://vidsrc.to/embed";
         const progressParam = (startSeconds > 0) ? `&progress=${Math.floor(startSeconds)}` : "";
         const bustParam = forceFresh ? `&_cb=${Date.now()}` : "";
         if (item.type === "movie") return `${base}/movie/${item.tmdbId}?color=e50914&autoPlay=true${progressParam}${bustParam}`;
