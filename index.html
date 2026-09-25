@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>MyFlix </title>
+    <title>MyFlix</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23e50914'/><path d='M40 32 L72 50 L40 68 Z' fill='white'/></svg>">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <link rel="apple-touch-icon" href="icon-180.png" />
@@ -170,24 +170,86 @@
       .row-wrap:hover .row-arrow { opacity: 1; }
       .row-arrow:hover { background: #e50914; }
       .row-arrow.right { right: 8px; }
+      .row-arrow.left { left: 8px; }
+      #allView { padding-top: 10px; background: transparent; }
       .row-arrow[hidden] { display: none; }
       @media (hover: none) { .row-arrow { display: none; } }
 
       /* View all */
       .view-all { background: none; border: none; color: rgba(255,255,255,.7); font-size: 15px; font-weight: 600; cursor: pointer; }
       .view-all:hover { color: #fff; }
+
+      #providerView { padding-top: 10px; background: transparent; }
+      .provider-scroll { gap: 22px; }
+      .provider-tile { flex: 0 0 auto; width: 110px; text-align: center; cursor: pointer; }
+      .provider-logo { width: 110px; height: 110px; border-radius: 24px; background-size: cover; background-position: center; box-shadow: 0 8px 24px rgba(0,0,0,.5); transition: transform .2s; }
+      .provider-tile:hover .provider-logo { transform: scale(1.08); }
+      .provider-name { font-size: 13px; opacity: .8; margin-top: 10px; line-height: 1.3; }
+      .provider-tabs { display: flex; gap: 6px; background: rgba(255,255,255,.08); padding: 4px; border-radius: 999px; }
+      .provider-tab { background: none; border: none; color: #fff; padding: 8px 18px; border-radius: 999px; font-weight: 600; cursor: pointer; opacity: .7; }
+      .provider-tab.active { background: #fff; color: #000; opacity: 1; }
+      @media (max-width: 768px) {
+        .provider-tile { width: 80px; }
+        .provider-logo { width: 80px; height: 80px; border-radius: 18px; }
+      }
+      /* Header: glass pill, transparent until scroll */
+      header { position: fixed; top: 0; left: 0; right: 0; z-index: 20; display: flex; align-items: center; gap: 16px; padding: 14px 32px; padding-top: calc(14px + env(safe-area-inset-top)); background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; transition: background .3s; }
+      header::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(rgba(0,0,0,.55), transparent); transition: opacity .3s; }
+      header.scrolled { background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; }
+      header.scrolled::before { opacity: 0; }
+      header.scrolled .nav-pill { background: rgba(20,20,22,.65); border-color: rgba(255,255,255,.18); }
+      .logo { text-shadow: 0 2px 12px rgba(0,0,0,.7); }
+      .profile-avatar { box-shadow: 0 4px 14px rgba(0,0,0,.5); }
+      header { pointer-events: none; }
+      header > * { pointer-events: auto; }
+      .logo { font-size: 26px; font-weight: 800; color: #e50914; cursor: pointer; letter-spacing: -.5px; }
+      .nav-pill { margin-left: auto; display: flex; align-items: center; gap: 4px; padding: 5px; border-radius: 999px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.12); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+      .nav-links { display: flex; gap: 2px; margin: 0; }
+      .nav-link { display: flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 999px; font-size: 14px; font-weight: 600; color: #fff; opacity: .8; cursor: pointer; transition: background .2s, color .2s, opacity .2s; }
+      .nav-link:hover { opacity: 1; background: rgba(255,255,255,.1); }
+      .nav-link.active { background: #fff; color: #111; opacity: 1; }
+      .search-wrap { display: flex; align-items: center; }
+      .search-icon { background: none; border: none; color: #fff; opacity: .85; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+      .search-icon:hover { background: rgba(255,255,255,.1); opacity: 1; }
+      .search-bar { width: 0; min-width: 0; padding: 0; margin: 0; border: none; outline: none; background: transparent; color: #fff; font-size: 14px; transition: width .25s ease, padding .25s; }
+      .search-wrap.open .search-bar { width: 200px; padding: 6px 12px 6px 0; }
+      .search-bar::placeholder { color: rgba(255,255,255,.6); }
+      .profile-button { display: flex; align-items: center; cursor: pointer; margin-left: 0; }
+      .profile-avatar { width: 36px; height: 36px; border-radius: 50%; background: #e50914; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; }
+      .profile-name { display: none; }
+      main { padding-top: 76px; }
+      .home-hero { margin-top: -76px; }
+      @media (max-width: 768px) {
+        header { padding: 10px 12px; padding-top: calc(10px + env(safe-area-inset-top)); gap: 8px; }
+        .logo { font-size: 20px; }
+        .nav-link { padding: 7px 10px; font-size: 13px; }
+        .nav-link svg { display: none; }
+        .search-wrap.open .search-bar { width: 120px; }
+        main { padding-top: 64px; }
+        .home-hero { margin-top: -64px; }
+      }
     </style>
   </head>
   <body>
     <div id="pageBg"></div>
-    <header>
+    <header id="siteHeader">
       <div id="homeLogo" class="logo">MyFlix</div>
-      <nav class="nav-links">
-        <div id="navHome" class="nav-link active">Home</div>
-        <div id="navMovies" class="nav-link">Movies</div>
-        <div id="navTv" class="nav-link">Shows</div>
-      </nav>
-      <input id="searchInput" class="search-bar" type="search" placeholder="Search titles..." />
+      <div class="nav-pill">
+        <nav class="nav-links">
+          <div id="navHome" class="nav-link active">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+            Home
+          </div>
+          <div id="navMovies" class="nav-link">Movies</div>
+          <div id="navTv" class="nav-link">Shows</div>
+        </nav>
+        <div class="search-wrap" id="searchWrap">
+          <button class="search-icon" id="searchToggle" aria-label="Search">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          </button>
+          <input id="searchInput" class="search-bar" type="search" placeholder="Search titles..." />
+        </div>
+      </div>
       <div class="profile-button" id="profileButton">
         <div class="profile-avatar" id="profileAvatar">?</div>
         <div class="profile-name" id="profileNameLabel">Profile</div>
@@ -223,6 +285,10 @@
         </div>
 
       <section class="rows-section">
+        <div class="row" id="providersRow" style="display:none">
+          <div class="row-title">Browse by Provider</div>
+          <div class="row-scroll provider-scroll" id="providersScroll"></div>
+        </div>
         <div class="row" id="homeContinueRow" style="display: none">
           <div class="row-header">
             <div class="row-title">Continue watching</div>
@@ -369,6 +435,22 @@
           <div class="row-scroll" id="searchTvRow"></div>
         </div>
       </section>
+      <section id="allView" class="view">
+        <div class="browse-header"><div class="browse-title" id="allViewTitle"></div></div>
+        <div id="allViewGrid" class="movies-grid"></div>
+      </section>
+
+      <section id="providerView" class="view">
+        <div class="browse-header">
+          <div class="browse-title" id="providerTitle"></div>
+          <div class="provider-tabs">
+            <button class="provider-tab active" data-type="movie">Movies</button>
+            <button class="provider-tab" data-type="tv">Shows</button>
+          </div>
+        </div>
+        <div id="providerGrid" class="movies-grid"></div>
+        <div class="browse-footer"><button id="providerMoreBtn" class="btn btn-secondary btn-small">Load more</button></div>
+      </section>
 
       <!-- Detail / player view -->
       <section id="detailView" class="view">
@@ -394,6 +476,7 @@
       const API_BASE = "https://myflix-api.tqwstudio.workers.dev";
       const PROFILES_KEY = "myflix:profiles";
       const CURRENT_PROFILE_KEY = "myflix:currentProfile";
+      const WATCH_REGION = "US";
 
       // ── State ────────────────────────────────────────────────────────────────
       const CATALOG = { movies: [], tv: [] };
@@ -517,6 +600,8 @@
         else if (name === "profiles") { profilesView.classList.add("active"); setNavActive(""); }
         else if (name === "search") { searchView.classList.add("active"); setNavActive(""); }
         else if (name === "detail") { detailView.classList.add("active"); setNavActive(""); }
+        else if (name === "all") { document.getElementById("allView").classList.add("active"); setNavActive(""); }
+        else if (name === "provider") { document.getElementById("providerView").classList.add("active"); setNavActive(""); }
         currentView = name;
       }
 
@@ -1177,6 +1262,7 @@
         const card = document.createElement("div");
         card.className = "card";
         card.title = item.title;
+        card._item = item; card._rec = progressRec;
         if (progressRec && progressRec.progress > 0) card.classList.add("has-progress");
 
         const poster = document.createElement("div");
@@ -1522,6 +1608,14 @@
         renderProfiles();
       });
       window.addEventListener("beforeunload", () => flushCurrentPlaybackToBackend());
+      const siteHeader = document.getElementById("siteHeader");
+      const searchWrap = document.getElementById("searchWrap");
+      window.addEventListener("scroll", () => siteHeader.classList.toggle("scrolled", window.scrollY > 40), { passive: true });
+      document.getElementById("searchToggle").addEventListener("click", () => {
+        searchWrap.classList.add("open");
+        searchInput.focus();
+      });
+      searchInput.addEventListener("blur", () => { if (!searchInput.value.trim()) searchWrap.classList.remove("open"); });
 
       function setupRowArrows() {
         document.querySelectorAll(".row-scroll").forEach(scroller => {
@@ -1550,10 +1644,100 @@
         });
       }
 
-      document.querySelectorAll(".view-all").forEach(b =>
-        b.addEventListener("click", () => (b.dataset.go === "movies" ? navMovies : navTv).click())
-      );
+      document.querySelectorAll(".view-all").forEach(b => b.addEventListener("click", () => {
+        if (b.dataset.go === "movies") return navMovies.click();
+        if (b.dataset.go === "tv") return navTv.click();
+        const src = document.getElementById(b.dataset.row);
+        const grid = document.getElementById("allViewGrid");
+        grid.innerHTML = "";
+        [...src.children].forEach(c => { if (c._item) grid.appendChild(createCard(c._item, c._rec)); });
+        document.getElementById("allViewTitle").textContent = b.closest(".row").querySelector(".row-title").textContent;
+        showView("all");
+        window.scrollTo(0, 0);
+      }));
+      
 
+
+      let providerState = { id: null, name: "", type: "movie", page: 1 };
+
+      async function loadProviders() {
+        try {
+          const [m, t] = await Promise.all([
+            tmdbFetch("/watch/providers/movie", { watch_region: WATCH_REGION }),
+            tmdbFetch("/watch/providers/tv", { watch_region: WATCH_REGION })
+          ]);
+          const map = new Map();
+          [...(m.results || []), ...(t.results || [])].forEach(p => {
+            if (/with ads|channel/i.test(p.provider_name)) return;
+            const prio = (p.display_priorities && p.display_priorities[WATCH_REGION]) ?? p.display_priority ?? 999;
+            const ex = map.get(p.provider_id);
+            if (!ex || prio < ex.prio) map.set(p.provider_id, { ...p, prio });
+          });
+          const list = [...map.values()].sort((a, b) => a.prio - b.prio).slice(0, 20);
+          const scroll = document.getElementById("providersScroll");
+          scroll.innerHTML = "";
+          list.forEach(p => {
+            const tile = document.createElement("div");
+            tile.className = "provider-tile";
+            const logo = document.createElement("div");
+            logo.className = "provider-logo";
+            logo.style.backgroundImage = `url("https://image.tmdb.org/t/p/w154${p.logo_path}")`;
+            const name = document.createElement("div");
+            name.className = "provider-name";
+            name.textContent = p.provider_name;
+            tile.append(logo, name);
+            tile.addEventListener("click", () => openProvider(p.provider_id, p.provider_name));
+            scroll.appendChild(tile);
+          });
+          document.getElementById("providersRow").style.display = list.length ? "block" : "none";
+        } catch (e) { console.error("loadProviders:", e); }
+      }
+
+      function openProvider(id, name) {
+        providerState = { id, name, type: "movie", page: 1 };
+        document.getElementById("providerTitle").textContent = name;
+        document.querySelectorAll(".provider-tab").forEach(t => t.classList.toggle("active", t.dataset.type === "movie"));
+        showView("provider");
+        window.scrollTo(0, 0);
+        loadProviderPage(true);
+      }
+
+      async function loadProviderPage(reset) {
+        const grid = document.getElementById("providerGrid");
+        const type = providerState.type;
+        if (reset) { providerState.page = 1; grid.innerHTML = "<div class='small-muted'>Loading...</div>"; }
+        try {
+          const data = await tmdbFetch(`/discover/${type}`, {
+            with_watch_providers: providerState.id, watch_region: WATCH_REGION,
+            with_watch_monetization_types: "flatrate", sort_by: "popularity.desc",
+            include_adult: "false", page: providerState.page
+          });
+          const items = (data.results || []).map(r => {
+            const d = r.release_date || r.first_air_date;
+            return {
+              id: String(r.id), tmdbId: String(r.id), type,
+              title: r.title || r.name || r.original_title || r.original_name || "Untitled",
+              year: d ? Number(d.slice(0, 4)) : "",
+              description: r.overview || "",
+              ...(type === "tv" ? { season: 1, episode: 1 } : {}),
+              poster: r.poster_path ? TMDB_POSTER_BASE + r.poster_path : null,
+              backdrop: r.backdrop_path ? TMDB_IMAGE_BASE + r.backdrop_path : null,
+              genres: r.genre_ids || []
+            };
+          });
+          rememberItems(items);
+          if (reset) grid.innerHTML = "";
+          items.forEach(item => grid.appendChild(createCard(item, loadProgressForItem(item))));
+          providerState.page++;
+        } catch (e) { console.error("loadProviderPage:", e); }
+      }
+
+      document.querySelectorAll(".provider-tab").forEach(tab => tab.addEventListener("click", () => {
+        document.querySelectorAll(".provider-tab").forEach(t => t.classList.toggle("active", t === tab));
+        providerState.type = tab.dataset.type;
+        loadProviderPage(true);
+      }));
+      document.getElementById("providerMoreBtn").addEventListener("click", () => loadProviderPage(false));
       // ── Init ──────────────────────────────────────────────────────────────────
       async function init() {
         setupRowArrows();
@@ -1577,39 +1761,33 @@
         profiles = merged;
         renderProfiles();
 
-        if (storedProfileName && profiles.find(p => p.name === storedProfileName)) {
-          currentProfile = storedProfileName;
-        } else if (profiles.length) {
-          currentProfile = profiles[0].name;
-          localStorage.setItem(CURRENT_PROFILE_KEY, currentProfile);
-        }
+                // Only auto-pick a profile if this browser has chosen one before
+        currentProfile = storedProfileName && profiles.find(p => p.name === storedProfileName) ? storedProfileName : null;
         updateProfileHeader();
+        if (!currentProfile) showView("profiles");
 
-        // Start TMDB fetches in parallel — genres run alongside trending, not after
-        await Promise.all([
-          fetchTrending(),
-          fetchMovieGenres(),
-          fetchTvGenres()
-        ]);
+        await Promise.all([fetchTrending(), fetchMovieGenres(), fetchTvGenres()]);
+        loadProviders();
 
         if (currentProfile) {
-          // Show home immediately with trending while recs + backend load in bg
           showView("home");
-          renderHomeRows(); // renders trending instantly; personalised rows fill in async
-          // Backend profile sync + progress runs in background — doesn't block UI
-          loadProfilesFromBackend().then(backendProfiles => {
-            if (backendProfiles.length) {
-              // Backend is the source of truth for the profile LIST.
-              // Trust it directly so a deleted profile doesn't get merged back in.
-              profiles = backendProfiles.map(p => ({ name: p.name }));
-              localStorage.setItem(PROFILES_KEY, JSON.stringify(profiles));
-              renderProfiles();
-            }
-          });
+          renderHomeRows();
           syncProgressFromBackendToLocal(currentProfile).then(() => renderHomeRows());
-        } else {
-          showView("profiles");
         }
+
+        // Always pull the real profile list from the cloud
+        loadProfilesFromBackend().then(backendProfiles => {
+          if (!backendProfiles.length) return;
+          profiles = backendProfiles.map(p => ({ name: p.name }));
+          localStorage.setItem(PROFILES_KEY, JSON.stringify(profiles));
+          renderProfiles();
+          if (currentProfile && !profiles.find(p => p.name === currentProfile)) {
+            currentProfile = null;
+            localStorage.removeItem(CURRENT_PROFILE_KEY);
+            updateProfileHeader();
+            showView("profiles");
+          }
+        });
       }
 
       init();
