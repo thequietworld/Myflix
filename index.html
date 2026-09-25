@@ -247,7 +247,8 @@
       .filter-btn-secondary { background: rgba(255,255,255,.1); color: #fff; border: 1px solid rgba(255,255,255,.14); }
       .filter-btn-secondary:hover { background: rgba(255,255,255,.18); }
       .browse-title { font-size: 30px; font-weight: 800; letter-spacing: -.5px; }
-    </style>
+      .watch-back { display: none; }
+          </style>
   </head>
   <body>
     <div id="pageBg"></div>
@@ -475,7 +476,7 @@
       <section id="detailView" class="view">
         <div class="watch-shell" id="watchShell">
           <button id="backBtn" class="watch-back">←</button>
-          <iframe id="playerFrame" class="player" src="" allowfullscreen allow="autoplay; fullscreen" referrerpolicy="no-referrer"></iframe>
+          <iframe id="playerFrame" class="player" src="" allowfullscreen allow="autoplay; fullscreen; picture-in-picture" referrerpolicy="no-referrer"></iframe>
           <div style="display:none">
             <div id="detailTitle"></div><div id="detailMeta"></div><div id="detailDescription"></div>
             <span id="detailStatus"></span><span id="detailTypeBadge"></span><span id="detailSeasonBadge"></span>
@@ -1120,13 +1121,12 @@
 
       // ── Player URL ────────────────────────────────────────────────────────────
       function buildPlayerUrl(item, startSeconds) {
-        const base = "https://vidsrc.sbs/embed";
-        const params = new URLSearchParams({ autoplay: "1", color: "e50914" });
+        const params = new URLSearchParams({ autoplay: "true", color: "#e50914", back: "close", continueprompt: "false" });
         if (startSeconds > 0) params.set("t", Math.floor(startSeconds));
-        const path = item.type === "movie"
-          ? `movie/${item.tmdbId}`
-          : `tv/${item.tmdbId}/${item.season || 1}/${item.episode || 1}`;
-        return `${base}/${path}?${params}`;
+        if (item.type === "movie") return `https://cinesrc.st/embed/movie/${item.tmdbId}?${params}`;
+        params.set("s", item.season || 1);
+        params.set("e", item.episode || 1);
+        return `https://cinesrc.st/embed/tv/${item.tmdbId}?${params}`;
       }
 
       function loadItem(item, resume, forceRestart) {
@@ -1561,20 +1561,30 @@
       function restartHeroTimer() { if (heroTimer) clearInterval(heroTimer); heroTimer = setInterval(() => setHeroIndex(heroIndex + 1), 8000); }
 
       // ── Events ────────────────────────────────────────────────────────────────
-      window.addEventListener("message", function (event) {
-        let payload = event.data;
-        try { if (typeof payload === "string") payload = JSON.parse(payload); } catch (e) { return; }
-        if (!payload || payload.type !== "PLAYER_EVENT") return;
-        const data = payload.data || {};
-        if (!data.id) return;
-        saveProgressLocal(data);
-        if (currentItem && String(data.id) === String(currentItem.tmdbId)) {
-          if (data.event === "play") detailStatus.textContent = "Playing";
-          if (data.event === "pause") detailStatus.textContent = "Paused";
-          if (data.event === "ended") detailStatus.textContent = "Finished";
-          if (data.currentTime != null && data.duration != null) detailProgressText.textContent = `${(data.progress || 0).toFixed(1)}% watched • ${formatTime(data.currentTime)} / ${formatTime(data.duration)}`;
+      let lastCloudSync = 0;
+      window.addEventListener("message", event => {
+        if (event.origin !== "https://cinesrc.st") return;
+        const d = event.data || {};
+        if (!d.type || !d.type.startsWith("cinesrc:") || !currentItem) return;
+
+        if (d.type === "cinesrc:timeupdate" && d.duration > 0) {
+          saveProgressLocal({
+            id: currentItem.tmdbId, mediaType: currentItem.type,
+            season: currentItem.type === "tv" ? (currentItem.season || 1) : 0,
+            episode: currentItem.type === "tv" ? (currentItem.episode || 1) : 0,
+            currentTime: d.currentTime, duration: d.duration,
+            progress: Math.min(100, (d.currentTime / d.duration) * 100),
+            profile: playbackProfile || currentProfile
+          });
+          if (Date.now() - lastCloudSync > 30000) { lastCloudSync = Date.now(); flushCurrentPlaybackToBackend(); }
         }
-        if (data.event === "ended") flushCurrentPlaybackToBackend();
+        if (d.type === "cinesrc:pause" || d.type === "cinesrc:ended") flushCurrentPlaybackToBackend();
+        if (d.type === "cinesrc:nextepisode") {
+          flushCurrentPlaybackToBackend();
+          currentItem = { ...currentItem, season: d.season, episode: d.episode, pinEpisode: true };
+          lastFlushedKey = null; lastFlushedTimestamp = null;
+        }
+        if (d.type === "cinesrc:close") { searchInput.value = ""; showView("home"); renderHomeRows(); }
       });
 
       let searchTimeout = null;
