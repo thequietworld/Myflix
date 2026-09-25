@@ -953,14 +953,7 @@
       async function fetchDiscoverPage(type, genreIds, page = 1) {
         const endpoint = type === "movie" ? "/discover/movie" : "/discover/tv";
         const dateKey = type === "movie" ? "primary_release_date.lte" : "first_air_date.lte";
-        const params = {
-          sort_by: "vote_average.desc",
-          "vote_count.gte": "200",
-          [dateKey]: "2025-12-31",
-          with_genres: genreIds.join(","),
-          include_adult: "false",
-          page: String(page)
-        };
+        const params = new URLSearchParams({ autoplay: "true", color: "#e50914", back: "close", continueprompt: "false", autonext: "false" });
         const data = await tmdbFetch(endpoint, params);
         return (data.results || []).map(r => {
           if (type === "movie") return {
@@ -1303,7 +1296,7 @@
         meta.className = "card-meta";
         let metaText = item.year ? String(item.year) : "";
         if (item.type === "tv" && item.season && item.episode) metaText += (metaText ? " • " : "") + `S${item.season}E${item.episode}`;
-        if (progressRec && progressRec.progress > 0) metaText += (metaText ? " • " : "") + `${progressRec.progress.toFixed(1)}% watched`;
+        if (progressRec && progressRec.progress > 1) metaText += (metaText ? " • " : "") + `${progressRec.progress.toFixed(1)}% watched`;
         meta.textContent = metaText;
 
         body.appendChild(titleEl);
@@ -1594,18 +1587,10 @@
         const d = event.data || {};
         if (!d.type || !d.type.startsWith("cinesrc:") || !currentItem) return;
 
-        if (d.type === "cinesrc:timeupdate") { lastTimeUpdate = Date.now(); savePlayerTime(d.currentTime, d.duration); }
-        if (d.type === "cinesrc:response") {
-          if (d.command === "getCurrentTime") polledTime = d.result;
-          if (d.command === "getDuration" && polledTime != null) savePlayerTime(polledTime, d.result);
-        }
+        if (d.type === "cinesrc:timeupdate") savePlayerTime(d.currentTime, d.duration);
         if (d.type === "cinesrc:pause" || d.type === "cinesrc:ended") flushCurrentPlaybackToBackend();
-        if (d.type === "cinesrc:nextepisode") {
-          flushCurrentPlaybackToBackend();
-          currentItem = { ...currentItem, season: d.season, episode: d.episode, pinEpisode: true };
-          lastFlushedKey = null; lastFlushedTimestamp = null; polledTime = null;
-          saveProgressLocal({ id: currentItem.tmdbId, mediaType: "tv", season: d.season, episode: d.episode, progress: 1, currentTime: 0, duration: 0, profile: playbackProfile || currentProfile });
-        }
+        if (d.type === "cinesrc:nextepisode") playEpisode(d.season, d.episode);
+        if (d.type === "cinesrc:ended" && currentItem.type === "tv") { const { next } = epNeighbours(); if (next) playEpisode(...next); }
         if (d.type === "cinesrc:close") { searchInput.value = ""; showView("home"); renderHomeRows(); }
       });
 
