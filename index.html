@@ -228,6 +228,25 @@
         main { padding-top: 64px; }
         .home-hero { margin-top: -64px; }
       }
+      /* Filter panel restyle */
+      .filter-panel { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12); backdrop-filter: blur(20px) saturate(1.3); -webkit-backdrop-filter: blur(20px) saturate(1.3); border-radius: 22px; padding: 18px 22px; gap: 20px; align-items: flex-end; }
+      .filter-label { font-size: 11px; letter-spacing: 1px; color: rgba(255,255,255,.55); font-weight: 700; }
+      .filter-select, .year-input { appearance: none; -webkit-appearance: none; background-color: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.14); color: #fff; border-radius: 999px; padding: 10px 16px; font-size: 14px; font-weight: 600; transition: background .2s, border-color .2s, box-shadow .2s; }
+      .filter-select { padding-right: 40px; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; }
+      .filter-select:hover, .year-input:hover { background-color: rgba(255,255,255,.16); border-color: rgba(255,255,255,.28); }
+      .filter-select:focus, .year-input:focus { outline: none; border-color: #e50914; box-shadow: 0 0 0 3px rgba(229,9,20,.3); }
+      .filter-select option { background: #1a1a1a; color: #fff; }
+      .year-input { width: 96px; text-align: center; -moz-appearance: textfield; }
+      .year-input::-webkit-outer-spin-button, .year-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+      .year-input::placeholder { color: rgba(255,255,255,.5); }
+      .year-range span { opacity: .5; font-size: 13px; }
+      .filter-btn { border-radius: 999px; padding: 10px 22px; font-size: 14px; font-weight: 700; transition: transform .15s, background .2s, color .2s; }
+      .filter-btn:active { transform: scale(.96); }
+      .filter-btn-primary { background: #fff; color: #111; }
+      .filter-btn-primary:hover { background: #e50914; color: #fff; }
+      .filter-btn-secondary { background: rgba(255,255,255,.1); color: #fff; border: 1px solid rgba(255,255,255,.14); }
+      .filter-btn-secondary:hover { background: rgba(255,255,255,.18); }
+      .browse-title { font-size: 30px; font-weight: 800; letter-spacing: -.5px; }
     </style>
   </head>
   <body>
