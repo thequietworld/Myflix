@@ -1561,28 +1561,50 @@
       function restartHeroTimer() { if (heroTimer) clearInterval(heroTimer); heroTimer = setInterval(() => setHeroIndex(heroIndex + 1), 8000); }
 
       // ── Events ────────────────────────────────────────────────────────────────
-      let lastCloudSync = 0;
+      let lastCloudSync = 0, lastTimeUpdate = 0, polledTime = null;
+
+      function savePlayerTime(currentTime, duration) {
+        console.log("player msg:", event.origin, event.data);
+        if (!currentItem || !(duration > 0)) return;
+        saveProgressLocal({
+          id: currentItem.tmdbId, mediaType: currentItem.type,
+          season: currentItem.type === "tv" ? (currentItem.season || 1) : 0,
+          episode: currentItem.type === "tv" ? (currentItem.episode || 1) : 0,
+          currentTime, duration,
+          progress: Math.min(100, (currentTime / duration) * 100),
+          profile: playbackProfile || currentProfile
+        });
+        if (Date.now() - lastCloudSync > 30000) { lastCloudSync = Date.now(); flushCurrentPlaybackToBackend(); }
+      }
+
+      function sendPlayerCommand(command) {
+        if (playerFrame.contentWindow) playerFrame.contentWindow.postMessage({ type: "cinesrc:command", command, args: [] }, "https://cinesrc.st");
+      }
+
+      // Fallback: if the player stops sending time updates, ask it every 5s
+      setInterval(() => {
+        if (currentView !== "detail" || !currentItem) return;
+        if (Date.now() - lastTimeUpdate < 5000) return;
+        sendPlayerCommand("getCurrentTime");
+        sendPlayerCommand("getDuration");
+      }, 5000);
+
       window.addEventListener("message", event => {
         if (event.origin !== "https://cinesrc.st") return;
         const d = event.data || {};
         if (!d.type || !d.type.startsWith("cinesrc:") || !currentItem) return;
 
-        if (d.type === "cinesrc:timeupdate" && d.duration > 0) {
-          saveProgressLocal({
-            id: currentItem.tmdbId, mediaType: currentItem.type,
-            season: currentItem.type === "tv" ? (currentItem.season || 1) : 0,
-            episode: currentItem.type === "tv" ? (currentItem.episode || 1) : 0,
-            currentTime: d.currentTime, duration: d.duration,
-            progress: Math.min(100, (d.currentTime / d.duration) * 100),
-            profile: playbackProfile || currentProfile
-          });
-          if (Date.now() - lastCloudSync > 30000) { lastCloudSync = Date.now(); flushCurrentPlaybackToBackend(); }
+        if (d.type === "cinesrc:timeupdate") { lastTimeUpdate = Date.now(); savePlayerTime(d.currentTime, d.duration); }
+        if (d.type === "cinesrc:response") {
+          if (d.command === "getCurrentTime") polledTime = d.result;
+          if (d.command === "getDuration" && polledTime != null) savePlayerTime(polledTime, d.result);
         }
         if (d.type === "cinesrc:pause" || d.type === "cinesrc:ended") flushCurrentPlaybackToBackend();
         if (d.type === "cinesrc:nextepisode") {
           flushCurrentPlaybackToBackend();
           currentItem = { ...currentItem, season: d.season, episode: d.episode, pinEpisode: true };
-          lastFlushedKey = null; lastFlushedTimestamp = null;
+          lastFlushedKey = null; lastFlushedTimestamp = null; polledTime = null;
+          saveProgressLocal({ id: currentItem.tmdbId, mediaType: "tv", season: d.season, episode: d.episode, progress: 1, currentTime: 0, duration: 0, profile: playbackProfile || currentProfile });
         }
         if (d.type === "cinesrc:close") { searchInput.value = ""; showView("home"); renderHomeRows(); }
       });
