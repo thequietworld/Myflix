@@ -111,63 +111,6 @@ export default {
           return json({ ok: true, entries: results });
         }
 
-        // ── One-time KV → D1 migration (delete after running) ──
-        case "/migrate": {
-          if (!env.MYFLIX_KV) return json({ ok: false, error: "MYFLIX_KV not bound" }, 500);
-          const kv = env.MYFLIX_KV;
-          const now = Date.now();
-
-          // Profiles
-          let profileCount = 0;
-          const stored = await kv.get("profiles", "json").catch(() => null);
-          if (Array.isArray(stored)) {
-            const names = stored.map(p => String((p && p.name) || "").trim()).filter(Boolean);
-            if (names.length) {
-              await db.batch(names.map(n =>
-                db.prepare("INSERT OR IGNORE INTO profiles (name, created_at) VALUES (?, ?)").bind(n, now)
-              ));
-              profileCount = names.length;
-            }
-          }
-
-          // Progress (only overwrites D1 rows if the KV one is newer, so it's safe to re-run)
-          const upsert = db.prepare(
-            `INSERT INTO progress
-               (user_id, media_type, id, season, episode, position, duration, progress, timestamp)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-             ON CONFLICT (user_id, media_type, id, season, episode) DO UPDATE SET
-               position = excluded.position,
-               duration     = excluded.duration,
-               progress     = excluded.progress,
-               timestamp    = excluded.timestamp
-             WHERE excluded.timestamp > progress.timestamp`
-          );
-
-          const cursor = url.searchParams.get("cursor") || undefined;
-          const page = await kv.list({ prefix: "progress:", limit: 200, cursor });
-          const recs = await Promise.all(
-            page.keys.map(k => kv.get(k.name, "json").catch(() => null))
-          );
-          const stmts = recs
-            .filter(r => r && r.userId && r.id)
-            .map(r => upsert.bind(
-              String(r.userId), String(r.mediaType || "movie"), String(r.id),
-              Number(r.season) || 0, Number(r.episode) || 0,
-              Number(r.currentTime) || 0, Number(r.duration) || 0,
-              Number(r.progress) || 0, Number(r.timestamp) || now
-            ));
-          for (let i = 0; i < stmts.length; i += 50) await db.batch(stmts.slice(i, i + 50));
-          const progressCount = stmts.length;
-          const next = page.list_complete ? null : page.cursor;
-          if (next) {
-            return json({
-              ok: true, profiles: profileCount, progress: progressCount,
-              more: true, next: `${url.origin}/migrate?cursor=${encodeURIComponent(next)}`
-            });
-          }
-          return json({ ok: true, profiles: profileCount, progress: progressCount });
-        }
-
         default:
           return json({ ok: false, error: "not found" }, 404);
       }
