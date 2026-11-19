@@ -143,25 +143,28 @@ export default {
              WHERE excluded.timestamp > progress.timestamp`
           );
 
-          let progressCount = 0, cursor;
-          do {
-            const page = await kv.list({ prefix: "progress:", limit: 1000, cursor });
-            const stmts = [];
-            for (const k of page.keys) {
-              const r = await kv.get(k.name, "json").catch(() => null);
-              if (!r || !r.userId || !r.id) continue;
-              stmts.push(upsert.bind(
-                String(r.userId), String(r.mediaType || "movie"), String(r.id),
-                Number(r.season) || 0, Number(r.episode) || 0,
-                Number(r.currentTime) || 0, Number(r.duration) || 0,
-                Number(r.progress) || 0, Number(r.timestamp) || now
-              ));
-            }
-            for (let i = 0; i < stmts.length; i += 50) await db.batch(stmts.slice(i, i + 50));
-            progressCount += stmts.length;
-            cursor = page.list_complete ? undefined : page.cursor;
-          } while (cursor);
-
+          const cursor = url.searchParams.get("cursor") || undefined;
+          const page = await kv.list({ prefix: "progress:", limit: 200, cursor });
+          const recs = await Promise.all(
+            page.keys.map(k => kv.get(k.name, "json").catch(() => null))
+          );
+          const stmts = recs
+            .filter(r => r && r.userId && r.id)
+            .map(r => upsert.bind(
+              String(r.userId), String(r.mediaType || "movie"), String(r.id),
+              Number(r.season) || 0, Number(r.episode) || 0,
+              Number(r.currentTime) || 0, Number(r.duration) || 0,
+              Number(r.progress) || 0, Number(r.timestamp) || now
+            ));
+          for (let i = 0; i < stmts.length; i += 50) await db.batch(stmts.slice(i, i + 50));
+          const progressCount = stmts.length;
+          const next = page.list_complete ? null : page.cursor;
+          if (next) {
+            return json({
+              ok: true, profiles: profileCount, progress: progressCount,
+              more: true, next: `${url.origin}/migrate?cursor=${encodeURIComponent(next)}`
+            });
+          }
           return json({ ok: true, profiles: profileCount, progress: progressCount });
         }
 
